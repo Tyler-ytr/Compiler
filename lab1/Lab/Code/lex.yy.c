@@ -534,14 +534,17 @@ int yy_flex_debug = 0;
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
 #line 1 "./lexical.l"
-#line 3 "./lexical.l"
+#line 4 "./lexical.l"
 #include "syntax.tab.h"
-int chars = 0;
-int words = 0;
-int lines = 0;
+//#define DEBUGNOW
+void printfdebug(char *str){
+    #ifdef DEBUGNOW
+    printf("debug:Line %d :input  %s : %s\n",yylineno,str,yytext);
+    #endif
+}
 
-#line 544 "./lex.yy.c"
-#line 545 "./lex.yy.c"
+#line 547 "./lex.yy.c"
+#line 548 "./lex.yy.c"
 
 #define INITIAL 0
 
@@ -758,9 +761,9 @@ YY_DECL
 		}
 
 	{
-#line 30 "./lexical.l"
+#line 34 "./lexical.l"
 
-#line 764 "./lex.yy.c"
+#line 767 "./lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -829,186 +832,186 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 31 "./lexical.l"
-{yylval.type_int=yytext;return INT;}
+#line 35 "./lexical.l"
+{printfdebug("HEX");return INT;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 32 "./lexical.l"
-{yylval.type_int=yytext;return INT;}
+#line 36 "./lexical.l"
+{printfdebug("OCT");return INT;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 33 "./lexical.l"
+#line 37 "./lexical.l"
 {printf("To be done OCTERROR\n");}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 34 "./lexical.l"
-{/*printf("DEC\n");*/yylval.type_int=atoi(yytext);return INT;}
+#line 38 "./lexical.l"
+{printfdebug("DEC");return INT;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 35 "./lexical.l"
-{printf("FLOAT\n");return FLOAT;}
+#line 39 "./lexical.l"
+{printfdebug("FLOAT");return FLOAT;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 36 "./lexical.l"
+#line 40 "./lexical.l"
 {printf("To be done !FLOATERROR\n");}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 37 "./lexical.l"
+#line 41 "./lexical.l"
 {printf("LCOMMENT\n");char a=input();char b=input();while(a!='*'||b!='/'){/*printf("%c,%c\n",a,b);*/a=b;b=input();}}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 38 "./lexical.l"
+#line 42 "./lexical.l"
 {char a=input();while(a!='\n')a=input();printf("COMMENT\n");}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 39 "./lexical.l"
-{printf("SEMI\n");return SEMI;}
+#line 43 "./lexical.l"
+{printfdebug("SEMI");return SEMI;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 40 "./lexical.l"
-{printf("comma\n");return COMMA; }
+#line 44 "./lexical.l"
+{printfdebug("comma");return COMMA; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 41 "./lexical.l"
-{printf("assignop\n");return ASSIGNOP;}
+#line 45 "./lexical.l"
+{printfdebug("assignop");return ASSIGNOP;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 42 "./lexical.l"
-{printf("RELOP\n");return RELOP;}
+#line 46 "./lexical.l"
+{printfdebug("RELOP");return RELOP;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 43 "./lexical.l"
-{printf("plus\n");return PLUS;}
+#line 47 "./lexical.l"
+{printfdebug("plus");return PLUS;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 44 "./lexical.l"
-{printf("minus\n");return MINUS;}
+#line 48 "./lexical.l"
+{printfdebug("minus");return MINUS;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 45 "./lexical.l"
-{printf("star\n");return STAR;}
+#line 49 "./lexical.l"
+{printfdebug("star");return STAR;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 46 "./lexical.l"
-{printf("div\n");return DIV;}
+#line 50 "./lexical.l"
+{printfdebug("div");return DIV;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 47 "./lexical.l"
-{printf("and\n");return AND;}
+#line 51 "./lexical.l"
+{printfdebug("and");return AND;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 48 "./lexical.l"
-{printf("or\n");return OR;}
+#line 52 "./lexical.l"
+{printfdebug("or");return OR;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 49 "./lexical.l"
-{printf("dot\n");return DOT;}
+#line 53 "./lexical.l"
+{printfdebug("dot");return DOT;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 50 "./lexical.l"
-{printf("not\n");return NOT;}
+#line 54 "./lexical.l"
+{printfdebug("not");return NOT;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 51 "./lexical.l"
-{printf("type\n");return TYPE;}
+#line 55 "./lexical.l"
+{printfdebug("type");return TYPE;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 52 "./lexical.l"
-{printf("LP\n");return LP;}
+#line 56 "./lexical.l"
+{printfdebug("LP");return LP;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 53 "./lexical.l"
-{printf("RP\n");return RP;}
+#line 57 "./lexical.l"
+{printfdebug("RP");return RP;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 54 "./lexical.l"
-{printf("LB\n");return LB;}
+#line 58 "./lexical.l"
+{printfdebug("LB");return LB;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 55 "./lexical.l"
-{printf("RB\n");return RB;}
+#line 59 "./lexical.l"
+{printfdebug("RB");return RB;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 56 "./lexical.l"
-{printf("LC\n");return LC;}
+#line 60 "./lexical.l"
+{printfdebug("LC");return LC;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 57 "./lexical.l"
-{printf("RC\n");return RC;}
+#line 61 "./lexical.l"
+{printfdebug("RC");return RC;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 58 "./lexical.l"
-{printf("STRUCT\n");return STRUCT;}
+#line 62 "./lexical.l"
+{printfdebug("STRUCT");return STRUCT;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 59 "./lexical.l"
-{printf("return\n");return RETURN;}
+#line 63 "./lexical.l"
+{printfdebug("return");return RETURN;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 60 "./lexical.l"
-{printf("if\n");return IF;}
+#line 64 "./lexical.l"
+{printfdebug("if");return IF;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 61 "./lexical.l"
-{printf("else\n");return ELSE;}
+#line 65 "./lexical.l"
+{printfdebug("else");return ELSE;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 62 "./lexical.l"
-{printf("while\n");return WHILE;}
+#line 66 "./lexical.l"
+{printfdebug("while");return WHILE;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 63 "./lexical.l"
-{printf("ID\n");return ID;}
+#line 67 "./lexical.l"
+{printfdebug("ID");return ID;}
 	YY_BREAK
 case 34:
 /* rule 34 can match eol */
 YY_RULE_SETUP
-#line 64 "./lexical.l"
+#line 68 "./lexical.l"
 {   /*Let it go!*/ ;      }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 65 "./lexical.l"
+#line 69 "./lexical.l"
 { printf("Error type A at Line %d: Mysterious characters \'%s\'\n",yylineno, yytext);}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 66 "./lexical.l"
+#line 70 "./lexical.l"
 ECHO;
 	YY_BREAK
-#line 1012 "./lex.yy.c"
+#line 1015 "./lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2025,7 +2028,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 66 "./lexical.l"
+#line 70 "./lexical.l"
 
 int yywrap()
 { 
