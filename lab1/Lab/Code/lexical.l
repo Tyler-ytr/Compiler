@@ -2,7 +2,7 @@
 %{
 #include "syntax.tab.h"
 //#define DEBUGNOW
-#define DEBUGBISONNOW
+//#define DEBUGBISONNOW
 
 
 
@@ -19,7 +19,7 @@ void printfdebug(char *str){
     printf("debug:Line %d :input  %s : %s\n",yylineno,str,yytext);
     #endif
 }
-typedef struct Node{
+struct Node{
     //参考结构 https://segmentfault.com/a/1190000002451356
     struct Node *child;//第一个孩子;
     struct Node* next_sib;//下一个兄弟节点
@@ -32,7 +32,8 @@ typedef struct Node{
     int place;//节点的类型,0表示lexical里面的,1表示syntax里面的;
     int column;//表示行数;
     NODE_TYPE type;// 0 表示int,1表示float,2表示ID,3表示type;
-}NODE;
+};
+struct Node* root;
 
 void add_lexnode(char * Name,NODE_TYPE Type);
 //注意%locations应该要提前在.y文件注明https://stackoverflow.com/questions/43419585/how-to-resolve-a-yylloc-undeclared-error
@@ -181,7 +182,7 @@ int yywrap()
 }
 void add_lexnode(char * Name,NODE_TYPE Type){
 //    printf("In add lexnode!!\n");
-    yylval.node=(NODE*)malloc(sizeof(NODE));
+    yylval.node=(struct Node*)malloc(sizeof(struct Node));
     yylval.node->child=NULL;
     yylval.node->next_sib=NULL;
     yylval.node->column=yylineno;

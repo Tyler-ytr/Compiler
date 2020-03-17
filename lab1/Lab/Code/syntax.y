@@ -27,14 +27,15 @@ E   :   E '+' E         { $$ = $1 + $3; }
 */
 %{
 #include <stdio.h>
-#include "lex.yy.c"
 #include <stdarg.h>
 
 //#define YYSTYPE struct Node*
 /*Declarations*/
 struct Node *add_bisonnode(char* Name,int column);
 void  add_parentnode(struct Node *parent,int num_args,...);
-struct Node* root=NULL;
+void tree_search(struct Node* cur,int depth);
+extern struct Node* root;
+
 %}
 /*declared types*/
 %union {
@@ -381,6 +382,7 @@ Args:Exp COMMA Args{
 
           };
 %%
+#include "lex.yy.c"
 struct Node *add_bisonnode(char* Name,int column){
  struct Node * Root=(struct Node *)malloc(sizeof(struct Node));
  Root->child=NULL;
@@ -415,3 +417,32 @@ for(int i=1;i<num_args;i++){
 }
 ;
 }
+void tree_search(struct Node* cur,int depth){
+  if(cur==NULL){
+    return;
+  }
+  for(int i=0;i<depth;i++){
+    printf("  ");
+  }
+    printf("%s",cur->name);
+    if(cur->place==1){
+      printf(" (%d)",cur->column);
+    }
+    else if(cur->place==0){
+      if(cur->type==LEX_INT){
+        printf(": %d",cur->int_contant);
+      } 
+      else if(cur->type==LEX_FLOAT){
+        printf(": %f",cur->float_contant);
+      }
+      else if(cur->type==LEX_ID||cur->type==LEX_TYPE){
+        printf(": %s",cur->string_contant);
+      }else{
+        ;
+      }
+    }
+    printf("\n");
+  tree_search(cur->child,depth+1);
+    tree_search(cur->next_sib,depth);
+}
+
