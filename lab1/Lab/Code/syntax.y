@@ -28,72 +28,73 @@ E   :   E '+' E         { $$ = $1 + $3; }
 %{
 #include <stdio.h>
 #include "lex.yy.c"
+#include <stdarg.h>
+//#define YYSTYPE struct Node*
 /*Declarations*/
 %}
 /*declared types*/
 %union {
-  int type_int;
-  float type_float;
-  double type_double;
+  struct Node* node;
 }
 /*declared tokens(terminal symbol) from 7.1.1*/
-%token <type_int > INT
-%token  FLOAT
-%token  ID
-%token  SEMI
-%token  COMMA
-%token  ASSIGNOP
-%token  RELOP
-%token  PLUS
-%token  MINUS
-%token  STAR
-%token  DIV
-%token  AND
-%token  OR
-%token  DOT
-%token  NOT
-%token  TYPE
-%token  LP
-%token  RP
-%token  LB
-%token  RB
-%token  LC
-%token  RC
-%token  STRUCT
-%token  RETURN 
-%token  IF
-%token  ELSE
-%token  WHILE
+
+%token  <node>INT
+%token  <node>FLOAT
+%token  <node>ID
+%token  <node>SEMI
+%token  <node>COMMA
+%token  <node>ASSIGNOP
+%token  <node>RELOP
+%token  <node>PLUS
+%token  <node>MINUS
+%token  <node>STAR
+%token  <node>DIV
+%token  <node>AND
+%token  <node>OR
+%token  <node>DOT
+%token  <node>NOT
+%token  <node>TYPE
+%token  <node>LP
+%token  <node>RP
+%token  <node>LB
+%token  <node>RB
+%token  <node>LC
+%token  <node>RC
+%token  <node>STRUCT
+%token  <node>RETURN 
+%token  <node>IF
+%token  <node>ELSE
+%token  <node>WHILE
 /*declared  nonterminal symbol  from other 7*/
 /*
 //7.1.2
-%token  Program
+%type <node>Program
 
-%token ExtDecList
-%token ExtDef
-%token ExtDefList
+%type <node>ExtDecList
+%type <node>ExtDef
+%type <node>ExtDefList
 //7.1.3
-%token Specifier
-%token  StructSpecifier
-%token OptTag
-%token  Tag
+%type <node>Specifier
+%type  <node>StructSpecifier
+%type <node>OptTag
+%type  <node>Tag
 //7.1.4
-%token  VarDec
-%token  FunDec
-%token  VarList
-%token ParamDec
+%type <node> VarDec
+%type  <node>FunDec
+%type  <node>VarList
+%type <node>ParamDec
 //7.1.5
-%token  CompSt
-%token  StmtList
-%token  Stmt
+%type <node> CompSt
+%type  <node>StmtList
+%type  <node>Stmt
 //7.1.6
-%token DefList
-%token Def
-%token DecList
-%token Dec
+%type <node>DefList
+%type <node>Def
+%type <node>DecList
+%type <node>Dec
 //7.1.7
-%token Exp
-%token Args
+%type <node>Exp
+%type <node>Args
 */
 %start Program
 %right ASSIGNOP
@@ -175,3 +176,10 @@ Exp:Exp ASSIGNOP Exp;
 Args:Exp COMMA Args;
           | Exp;
 %%
+struct Node * add_bisonnode(char *Name,int num,...){
+//printf("in add bison node!\n");
+//va list 参考了 https://www.runoob.com/cprogramming/c-macro-va_arg.html
+
+
+;
+}

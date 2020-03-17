@@ -66,9 +66,11 @@
 
 #include <stdio.h>
 #include "lex.yy.c"
+#include <stdarg.h>
+//#define YYSTYPE struct Node*
 /*Declarations*/
 
-#line 72 "./syntax.tab.c" /* yacc.c:339  */
+#line 74 "./syntax.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -139,11 +141,9 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 34 "./syntax.y" /* yacc.c:355  */
+#line 36 "./syntax.y" /* yacc.c:355  */
 
-  int type_int;
-  float type_float;
-  double type_double;
+  struct Node* node;
 
 #line 149 "./syntax.tab.c" /* yacc.c:355  */
 };
@@ -462,12 +462,12 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   114,   114,   115,   116,   117,   118,   119,   120,   121,
-     123,   124,   125,   126,   127,   128,   129,   131,   132,   133,
-     134,   135,   136,   137,   139,   140,   141,   142,   143,   144,
-     145,   146,   147,   149,   150,   151,   152,   153,   154,   155,
-     157,   158,   159,   160,   161,   162,   163,   164,   165,   166,
-     167,   168,   169,   170,   171,   172,   173,   174,   175,   176
+       0,   115,   115,   116,   117,   118,   119,   120,   121,   122,
+     124,   125,   126,   127,   128,   129,   130,   132,   133,   134,
+     135,   136,   137,   138,   140,   141,   142,   143,   144,   145,
+     146,   147,   148,   150,   151,   152,   153,   154,   155,   156,
+     158,   159,   160,   161,   162,   163,   164,   165,   166,   167,
+     168,   169,   170,   171,   172,   173,   174,   175,   176,   177
 };
 #endif
 
@@ -1558,5 +1558,12 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 177 "./syntax.y" /* yacc.c:1906  */
+#line 178 "./syntax.y" /* yacc.c:1906  */
 
+struct Node * add_bisonnode(char *Name,int num,...){
+//printf("in add bison node!\n");
+//va list 参考了 https://www.runoob.com/cprogramming/c-macro-va_arg.html
+
+
+;
+}
