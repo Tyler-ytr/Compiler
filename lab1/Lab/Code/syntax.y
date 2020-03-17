@@ -29,14 +29,19 @@ E   :   E '+' E         { $$ = $1 + $3; }
 #include <stdio.h>
 #include "lex.yy.c"
 #include <stdarg.h>
+
 //#define YYSTYPE struct Node*
 /*Declarations*/
+struct Node *add_bisonnode(char* Name,int column);
+void  add_parentnode(struct Node *parent,int num_args,...);
+struct Node* root=NULL;
 %}
 /*declared types*/
 %union {
   struct Node* node;
 }
 /*declared tokens(terminal symbol) from 7.1.1*/
+%locations
 
 %token  <node>INT
 %token  <node>FLOAT
@@ -66,7 +71,7 @@ E   :   E '+' E         { $$ = $1 + $3; }
 %token  <node>ELSE
 %token  <node>WHILE
 /*declared  nonterminal symbol  from other 7*/
-/*
+
 //7.1.2
 %type <node>Program
 
@@ -95,7 +100,7 @@ E   :   E '+' E         { $$ = $1 + $3; }
 //7.1.7
 %type <node>Exp
 %type <node>Args
-*/
+
 %start Program
 %right ASSIGNOP
 %left OR
@@ -112,74 +117,301 @@ E   :   E '+' E         { $$ = $1 + $3; }
 %%
 //7.1.2 
 /*初始语法单元Program*/
-Program: ExtDefList  ;
-ExtDefList: ExtDef ExtDefList;
-                     |  /*Empty*/ ;
-ExtDef:Specifier ExtDecList SEMI;
-             | Specifier SEMI;
-             | Specifier FunDec CompSt;
-ExtDecList: VarDec;
-                      | VarDec COMMA ExtDecList;
+Program: ExtDefList {$$=add_bisonnode("Program",@$.first_line);
+                                         add_parentnode($$,1,$1);
+                                          root=$$;
+                                 //         printf("%s",root->name);
+                                 //        printf("%s",root->child->name);
+                                           } ;
+ExtDefList: ExtDef ExtDefList {$$=add_bisonnode("ExtDefList",@$.first_line);
+                                           add_parentnode($$,2,$1,$2);
+                      }
+                     |                                     {$$=add_bisonnode("ExtDefList",@$.first_line);
+                     //也有可能是NULL;
+                     }
+                     ;
+ExtDef:Specifier ExtDecList SEMI{
+                                                                      $$=add_bisonnode("ExtDef",@$.first_line);
+                                                                     add_parentnode($$,3,$1,$2,$3); 
+                                                                     };
+             | Specifier SEMI{
+                                                                      $$=add_bisonnode("ExtDef",@$.first_line);
+                                                                     add_parentnode($$,2,$1,$2); 
+             };
+             | Specifier FunDec CompSt{
+                                                                      $$=add_bisonnode("ExtDef",@$.first_line);
+                                                                     add_parentnode($$,3,$1,$2,$3); 
+             };
+ExtDecList: VarDec{
+                                        $$=add_bisonnode("ExtDecList",@$.first_line);
+                                         add_parentnode($$,1,$1);
+};
+                      | VarDec COMMA ExtDecList{
+                                        $$=add_bisonnode("ExtDecList",@$.first_line);
+                                                                     add_parentnode($$,3,$1,$2,$3); 
+
+                      };
 //7.1.3
-Specifier: TYPE;
-                   | StructSpecifier;
-StructSpecifier: STRUCT OptTag LC DefList RC;
-                            | STRUCT Tag;
-OptTag:ID;
-                | /*Empty*/;
-Tag:ID;
+Specifier: TYPE{
+                                $$=add_bisonnode("Specifier",@$.first_line);
+                                         add_parentnode($$,1,$1);
+
+};
+                   | StructSpecifier{
+                                $$=add_bisonnode("Specifier",@$.first_line);
+                                         add_parentnode($$,1,$1);
+                   };
+StructSpecifier: STRUCT OptTag LC DefList RC{
+                                $$=add_bisonnode("StructSpecifier",@$.first_line);
+                                add_parentnode($$,5,$1,$2,$3,$4,$5);
+};
+                            | STRUCT Tag{
+                                $$=add_bisonnode("StructSpecifier",@$.first_line);
+                                                                     add_parentnode($$,2,$1,$2); 
+                            };
+OptTag:ID{
+                      $$=add_bisonnode("OptTag",@$.first_line);
+                                         add_parentnode($$,1,$1);
+};
+                | /*Empty*/{
+                      $$=add_bisonnode("OptTag",@$.first_line);
+                     //也有可能是NULL;
+                };
+Tag:ID{
+                      $$=add_bisonnode("Tag",@$.first_line);
+                                         add_parentnode($$,1,$1);
+};
 //7.1.4
-VarDec:ID;
-              | VarDec LB INT RB;
-FunDec:ID LP VarList RP;
-                |  ID LP RP;
-VarList:ParamDec COMMA VarList;
-              | ParamDec;
-ParamDec:  Specifier VarDec;
+VarDec:ID{
+                    $$=add_bisonnode("VarDec",@$.first_line);
+                                         add_parentnode($$,1,$1);
+};
+              | VarDec LB INT RB{
+                    $$=add_bisonnode("VarDec",@$.first_line);
+                                add_parentnode($$,4,$1,$2,$3,$4);
+              };
+FunDec:ID LP VarList RP{
+                    $$=add_bisonnode("FuncDec",@$.first_line);
+                                add_parentnode($$,4,$1,$2,$3,$4);
+};
+                |  ID LP RP{
+                    $$=add_bisonnode("FuncDec",@$.first_line);
+                    add_parentnode($$,3,$1,$2,$3); 
+                };
+VarList:ParamDec COMMA VarList{
+                    $$=add_bisonnode("VarList",@$.first_line);
+                    add_parentnode($$,3,$1,$2,$3); 
+};
+              | ParamDec{
+                    $$=add_bisonnode("VarList",@$.first_line);
+                                         add_parentnode($$,1,$1);
+              };
+ParamDec:  Specifier VarDec{
+                    $$=add_bisonnode("ParamDec",@$.first_line);
+                                         add_parentnode($$,2,$1,$2);
+};
 //7.1.5 有移入规约冲突
-CompSt:LC DefList StmtList RC;
-StmtList:Stmt StmtList;
-                  | /*Empty*/;
-Stmt:Exp SEMI;
-          |CompSt; 
-          |RETURN Exp SEMI;
-          |IF LP Exp RP Stmt %prec LOWER_THAN_ELSE;
-          |IF LP Exp RP Stmt ELSE Stmt;
-          |WHILE LP Exp RP Stmt;
+CompSt:LC DefList StmtList RC{
+                    $$=add_bisonnode("CompSt",@$.first_line);
+                                add_parentnode($$,4,$1,$2,$3,$4);
+};
+StmtList:Stmt StmtList{
+                    $$=add_bisonnode("StmtList",@$.first_line);
+                                add_parentnode($$,2,$1,$2);
+
+};
+                  | /*Empty*/{
+                      $$=add_bisonnode("StmtList",@$.first_line);
+                     //也有可能是NULL;
+                  };
+Stmt:Exp SEMI{
+                    $$=add_bisonnode("Stmt",@$.first_line);
+                                add_parentnode($$,2,$1,$2);
+};
+          |CompSt{
+                    $$=add_bisonnode("Stmt",@$.first_line);
+                                add_parentnode($$,1,$1);
+          }; 
+          |RETURN Exp SEMI{
+                    $$=add_bisonnode("Stmt",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+          };
+          |IF LP Exp RP Stmt %prec LOWER_THAN_ELSE{
+                    $$=add_bisonnode("Stmt",@$.first_line);
+                                add_parentnode($$,5,$1,$2,$3,$4,$5);
+          };
+          |IF LP Exp RP Stmt ELSE Stmt{
+                    $$=add_bisonnode("Stmt",@$.first_line);
+                                add_parentnode($$,7,$1,$2,$3,$4,$5,$6,$7);
+          };
+          |WHILE LP Exp RP Stmt{
+                    $$=add_bisonnode("Stmt",@$.first_line);
+                                add_parentnode($$,5,$1,$2,$3,$4,$5);
+          };
 //7.1.6
-DefList:Def DefList;
-               |/*Empty*/;
-Def:Specifier DecList SEMI;
-DecList:Dec;
-                | Dec COMMA DecList;
-Dec:VarDec;
-        |VarDec ASSIGNOP Exp;
+DefList:Def DefList{
+                    $$=add_bisonnode("DefList",@$.first_line);
+                                add_parentnode($$,2,$1,$2);
+};
+               |/*Empty*/{
+                    $$=add_bisonnode("DefList",@$.first_line);
+               };
+Def:Specifier DecList SEMI{
+                    $$=add_bisonnode("Def",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+};
+DecList:Dec{
+                    $$=add_bisonnode("DecList",@$.first_line);
+                                add_parentnode($$,1,$1);
+
+};
+                | Dec COMMA DecList{;
+                    $$=add_bisonnode("DecList",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+                }
+Dec:VarDec{
+                    $$=add_bisonnode("Dec",@$.first_line);
+                                add_parentnode($$,1,$1);
+
+};
+        |VarDec ASSIGNOP Exp{
+                    $$=add_bisonnode("Dec",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
 //7.1.7
-Exp:Exp ASSIGNOP Exp;
-        | Exp AND Exp;
-        | Exp OR Exp;
-        | Exp RELOP Exp;
-        | Exp PLUS Exp;
-        |Exp MINUS Exp;
-        |Exp STAR Exp;
-        |Exp DIV Exp;
-        |LP Exp RP;
-        |MINUS Exp;
-        |NOT Exp;
-        |ID LP Args RP;
-        |ID LP RP;
-        |Exp LB Exp RB;
-        |Exp DOT ID;
-        |ID;
-        |INT ;
-        |FLOAT;
-Args:Exp COMMA Args;
-          | Exp;
+Exp:Exp ASSIGNOP Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+};
+        | Exp AND Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        | Exp OR Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        | Exp RELOP Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        | Exp PLUS Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        |Exp MINUS Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        |Exp STAR Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        |Exp DIV Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        |LP Exp RP{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        |MINUS Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,2,$1,$2);
+
+        };
+        |NOT Exp{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,2,$1,$2);
+
+        };
+        |ID LP Args RP{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,4,$1,$2,$3,$4);
+        };
+        |ID LP RP{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        |Exp LB Exp RB{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,4,$1,$2,$3,$4);
+
+        };
+        |Exp DOT ID{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+        };
+        |ID{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,1,$1);
+
+        };
+        |INT {
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,1,$1);
+
+        };
+        |FLOAT{
+                    $$=add_bisonnode("Exp",@$.first_line);
+                                add_parentnode($$,1,$1);
+
+        };
+Args:Exp COMMA Args{
+                    $$=add_bisonnode("Args",@$.first_line);
+                                add_parentnode($$,3,$1,$2,$3);
+
+};
+          | Exp{
+                    $$=add_bisonnode("Args",@$.first_line);
+                                add_parentnode($$,1,$1);
+
+          };
 %%
-struct Node * add_bisonnode(char *Name,int num,...){
-//printf("in add bison node!\n");
+struct Node *add_bisonnode(char* Name,int column){
+ struct Node * Root=(struct Node *)malloc(sizeof(struct Node));
+ Root->child=NULL;
+ Root->next_sib=NULL;
+ strcpy(Root->name,Name);
+ Root->place=1;
+ Root->type=OTHERS;
+ Root->column=column;
+ #ifdef DEBUGBISONNOW
+ printf("name: %s\tline:%d\n",Name,column);
+#endif
+return Root;
+}
+
+void  add_parentnode(struct Node *parent,int num_args,...){//
+//printf("in add parent node!\n");
 //va list 参考了 https://www.runoob.com/cprogramming/c-macro-va_arg.html
+va_list able;
+va_start(able,num_args);
 
-
+//struct Node * temp=(struct Node*)malloc(sizeof(struct Node));
+struct Node * temp=NULL;
+temp=va_arg(able,struct Node*);
+//printf("%s",parent->name);
+//printf("temp:%s\n",temp->name);
+parent->child=temp;
+for(int i=1;i<num_args;i++){
+   temp->next_sib=va_arg(able,struct Node*);
+   if(temp->next_sib!=NULL){
+     temp=temp->next_sib;
+   }
+}
 ;
 }

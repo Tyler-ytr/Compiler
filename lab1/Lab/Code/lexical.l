@@ -1,8 +1,11 @@
-%option yylineno
 
 %{
 #include "syntax.tab.h"
 //#define DEBUGNOW
+#define DEBUGBISONNOW
+
+
+
 typedef enum {
     LEX_INT=0,
     LEX_FLOAT=1,
@@ -16,7 +19,8 @@ void printfdebug(char *str){
     printf("debug:Line %d :input  %s : %s\n",yylineno,str,yytext);
     #endif
 }
-typedef struct Node{//参考结构 https://segmentfault.com/a/1190000002451356
+typedef struct Node{
+    //参考结构 https://segmentfault.com/a/1190000002451356
     struct Node *child;//第一个孩子;
     struct Node* next_sib;//下一个兄弟节点
     char name[32];//节点名称
@@ -31,9 +35,15 @@ typedef struct Node{//参考结构 https://segmentfault.com/a/1190000002451356
 }NODE;
 
 void add_lexnode(char * Name,NODE_TYPE Type);
-
-
+//注意%locations应该要提前在.y文件注明https://stackoverflow.com/questions/43419585/how-to-resolve-a-yylloc-undeclared-error
+    int yycolumn = 1;
+    #define YY_USER_ACTION \
+        yylloc.first_line = yylloc.last_line = yylineno; \
+        yylloc.first_column = yycolumn; \
+        yylloc.last_column = yycolumn + yyleng - 1; \
+        yycolumn += yyleng;
 %}
+%option yylineno
 letter_ [A-Za-z_]
 digit [0-9]
 digits [0-9]+
@@ -161,6 +171,7 @@ WhiteSpace  [ \t\r\n]+
         strcpy(yylval.node->string_contant,yytext);
     //    printf("%s\n",yylval.node->string_contant);
         return ID;}
+"\n" {yycolumn=1;}
 {WhiteSpace}+ {   /*Let it go!*/ ;      }
 .   { printf("Error type A at Line %d: Mysterious characters \'%s\'\n",yylineno, yytext);}
 %%
