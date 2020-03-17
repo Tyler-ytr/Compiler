@@ -127,7 +127,9 @@ Program: ExtDefList {$$=add_bisonnode("Program",@$.first_line);
 ExtDefList: ExtDef ExtDefList {$$=add_bisonnode("ExtDefList",@$.first_line);
                                            add_parentnode($$,2,$1,$2);
                       }
-                     |                                     {$$=add_bisonnode("ExtDefList",@$.first_line);
+                     |                                     {
+                       $$=NULL;
+                       //$$=add_bisonnode("ExtDefList",@$.first_line);
                      //也有可能是NULL;
                      }
                      ;
@@ -175,7 +177,8 @@ OptTag:ID{
                                          add_parentnode($$,1,$1);
 };
                 | /*Empty*/{
-                      $$=add_bisonnode("OptTag",@$.first_line);
+                  $$=NULL;
+                      //$$=add_bisonnode("OptTag",@$.first_line);
                      //也有可能是NULL;
                 };
 Tag:ID{
@@ -192,11 +195,11 @@ VarDec:ID{
                                 add_parentnode($$,4,$1,$2,$3,$4);
               };
 FunDec:ID LP VarList RP{
-                    $$=add_bisonnode("FuncDec",@$.first_line);
+                    $$=add_bisonnode("FunDec",@$.first_line);
                                 add_parentnode($$,4,$1,$2,$3,$4);
 };
                 |  ID LP RP{
-                    $$=add_bisonnode("FuncDec",@$.first_line);
+                    $$=add_bisonnode("FunDec",@$.first_line);
                     add_parentnode($$,3,$1,$2,$3); 
                 };
 VarList:ParamDec COMMA VarList{
@@ -222,7 +225,8 @@ StmtList:Stmt StmtList{
 
 };
                   | /*Empty*/{
-                      $$=add_bisonnode("StmtList",@$.first_line);
+                     $$=NULL;
+                     // $$=add_bisonnode("StmtList",@$.first_line);
                      //也有可能是NULL;
                   };
 Stmt:Exp SEMI{
@@ -255,7 +259,8 @@ DefList:Def DefList{
                                 add_parentnode($$,2,$1,$2);
 };
                |/*Empty*/{
-                    $$=add_bisonnode("DefList",@$.first_line);
+                  $$=NULL;
+                   // $$=add_bisonnode("DefList",@$.first_line);
                };
 Def:Specifier DecList SEMI{
                     $$=add_bisonnode("Def",@$.first_line);
@@ -445,4 +450,34 @@ void tree_search(struct Node* cur,int depth){
   tree_search(cur->child,depth+1);
     tree_search(cur->next_sib,depth);
 }
+// void tree_searchoutput(struct Node* cur,int depth,FILE*fp){//用于测试
+//  if(cur==NULL){
+//     return;
+//   }
+//   for(int i=0;i<depth;i++){
+//     printf("  ");
+//   }
+//     printf("%s",cur->name);
+//     if(cur->place==1){
+//       printf(" (%d)",cur->column);
+//     }
+//     else if(cur->place==0){
+//       if(cur->type==LEX_INT){
+//         printf(": %d",cur->int_contant);
+//       } 
+//       else if(cur->type==LEX_FLOAT){
+//         printf(": %f",cur->float_contant);
+//       }
+//       else if(cur->type==LEX_ID||cur->type==LEX_TYPE){
+//         printf(": %s",cur->string_contant);
+//       }else{
+//         ;
+//       }
+//     }
+//     printf("\n");
+//   tree_search(cur->child,depth+1);
+//     tree_search(cur->next_sib,depth);
+//   ;
+// }
+
 

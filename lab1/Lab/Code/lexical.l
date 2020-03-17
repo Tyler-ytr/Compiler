@@ -168,7 +168,7 @@ WhiteSpace  [ \t\r\n]+
         add_lexnode("WHILE",OTHERS);
         return WHILE;}
 {ID} {printfdebug("ID");
-        add_lexnode("ID",OTHERS);
+        add_lexnode("ID",LEX_ID);
         strcpy(yylval.node->string_contant,yytext);
     //    printf("%s\n",yylval.node->string_contant);
         return ID;}
