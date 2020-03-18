@@ -28,7 +28,7 @@ E   :   E '+' E         { $$ = $1 + $3; }
 %{
 #include <stdio.h>
 #include <stdarg.h>
-
+int syntaxError=0;
 //#define YYSTYPE struct Node*
 /*Declarations*/
 struct Node *add_bisonnode(char* Name,int column);
@@ -388,6 +388,12 @@ Args:Exp COMMA Args{
           };
 %%
 #include "lex.yy.c"
+
+int yyerror(char*msg){
+  printf("Error type B at Line %d: %s\n",yylineno,msg);
+}
+
+
 struct Node *add_bisonnode(char* Name,int column){
  struct Node * Root=(struct Node *)malloc(sizeof(struct Node));
  Root->child=NULL;

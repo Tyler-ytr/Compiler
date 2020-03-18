@@ -3,6 +3,7 @@
 #include "syntax.tab.h"
 //#define DEBUGNOW
 //#define DEBUGBISONNOW
+int lexError=0;
 
 
 
@@ -174,7 +175,7 @@ WhiteSpace  [ \t\r\n]+
         return ID;}
 "\n" {yycolumn=1;}
 {WhiteSpace}+ {   /*Let it go!*/ ;      }
-.   { printf("Error type A at Line %d: Mysterious characters \'%s\'\n",yylineno, yytext);}
+.   {lexError+=1;printf("Error type A at Line %d: Mysterious characters \'%s\'\n",yylineno, yytext);}
 %%
 int yywrap()
 { 

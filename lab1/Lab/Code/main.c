@@ -3,6 +3,8 @@
 extern FILE*yyin;
 #define YYDEBUG 1
 extern int yydebug;
+extern int lexError;
+extern int syntaxError;
 extern struct Node* root;
 int yylex();
 int main(int argc,char**argv){
@@ -19,7 +21,9 @@ yyrestart(f);
 yyparse();
 
 //printf("%s\n",root->name);
-tree_search(root,0);
+if(lexError==0&&syntaxError==0){
+  printf("l: %d,\ts:%d\n",lexError,syntaxError);
+tree_search(root,0);}
 return 0;
 /*
     if(argc>1){
