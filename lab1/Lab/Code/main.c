@@ -22,8 +22,9 @@ yyparse();
 
 //printf("%s\n",root->name);
 if(lexError==0&&syntaxError==0){
-  printf("l: %d,\ts:%d\n",lexError,syntaxError);
-tree_search(root,0);}
+//  printf("l: %d,\ts:%d\n",lexError,syntaxError);
+tree_search(root,0);
+}
 return 0;
 /*
     if(argc>1){

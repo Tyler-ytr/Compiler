@@ -28,6 +28,9 @@ E   :   E '+' E         { $$ = $1 + $3; }
 %{
 #include <stdio.h>
 #include <stdarg.h>
+extern int yylineno;
+int emptyflag=0;
+int emptystart=0;
 int syntaxError=0;
 //#define YYSTYPE struct Node*
 /*Declarations*/
@@ -109,7 +112,8 @@ extern struct Node* root;
 %left  RELOP
 %left PLUS MINUS
 %left STAR DIV
-%right NOT
+%right NOT 
+%left UMINUS //负号 https://blog.csdn.net/sirouni2003/article/details/400672#SEC85
 %left  DOT 
 %left LB RB 
 %left LP RP
@@ -120,16 +124,23 @@ extern struct Node* root;
 /*初始语法单元Program*/
 Program: ExtDefList {$$=add_bisonnode("Program",@$.first_line);
                                          add_parentnode($$,1,$1);
+                                     
+                                     //    printf("sdsd:%d\n",yylineno);
                                           root=$$;
                                  //         printf("%s",root->name);
                                  //        printf("%s",root->child->name);
                                            } ;
 ExtDefList: ExtDef ExtDefList {$$=add_bisonnode("ExtDefList",@$.first_line);
+//printf("sdsd:%d\n",yylineno);
                                            add_parentnode($$,2,$1,$2);
                       }
                      |                                     {
-                       $$=NULL;
-                       //$$=add_bisonnode("ExtDefList",@$.first_line);
+                      $$=NULL;
+     //                 printf("sdsd:%d\n",yylineno);
+         //         emptyflag=1;
+                  emptystart=yylineno;
+
+                  //     $$=add_bisonnode("ExtDefList",yylineno);
                      //也有可能是NULL;
                      }
                      ;
@@ -144,7 +155,18 @@ ExtDef:Specifier ExtDecList SEMI{
              | Specifier FunDec CompSt{
                                                                       $$=add_bisonnode("ExtDef",@$.first_line);
                                                                      add_parentnode($$,3,$1,$2,$3); 
+             };|error SEMI{
+               syntaxError+=1;
              };
+             |Specifier error SEMI{
+               syntaxError+=1;
+             };
+             |Specifier error{
+               syntaxError+=1;
+             }|
+             error Specifier SEMI{
+               syntaxError+=1;
+             }
 ExtDecList: VarDec{
                                         $$=add_bisonnode("ExtDecList",@$.first_line);
                                          add_parentnode($$,1,$1);
@@ -154,6 +176,10 @@ ExtDecList: VarDec{
                                                                      add_parentnode($$,3,$1,$2,$3); 
 
                       };
+                      |
+                      VarDec error ExtDefList{
+                        syntaxError+=1;
+                      }
 //7.1.3
 Specifier: TYPE{
                                 $$=add_bisonnode("Specifier",@$.first_line);
@@ -194,6 +220,9 @@ VarDec:ID{
                     $$=add_bisonnode("VarDec",@$.first_line);
                                 add_parentnode($$,4,$1,$2,$3,$4);
               };
+              |VarDec LB error RB{
+                syntaxError+=1;
+              }
 FunDec:ID LP VarList RP{
                     $$=add_bisonnode("FunDec",@$.first_line);
                                 add_parentnode($$,4,$1,$2,$3,$4);
@@ -202,6 +231,12 @@ FunDec:ID LP VarList RP{
                     $$=add_bisonnode("FunDec",@$.first_line);
                     add_parentnode($$,3,$1,$2,$3); 
                 };
+                |ID LP error RP{
+                  syntaxError+=1;
+                }
+                |error LP VarList RP{
+                  syntaxError+=1;
+                }
 VarList:ParamDec COMMA VarList{
                     $$=add_bisonnode("VarList",@$.first_line);
                     add_parentnode($$,3,$1,$2,$3); 
@@ -219,6 +254,7 @@ CompSt:LC DefList StmtList RC{
                     $$=add_bisonnode("CompSt",@$.first_line);
                                 add_parentnode($$,4,$1,$2,$3,$4);
 };
+
 StmtList:Stmt StmtList{
                     $$=add_bisonnode("StmtList",@$.first_line);
                                 add_parentnode($$,2,$1,$2);
@@ -232,7 +268,7 @@ StmtList:Stmt StmtList{
 Stmt:Exp SEMI{
                     $$=add_bisonnode("Stmt",@$.first_line);
                                 add_parentnode($$,2,$1,$2);
-};
+};        
           |CompSt{
                     $$=add_bisonnode("Stmt",@$.first_line);
                                 add_parentnode($$,1,$1);
@@ -253,6 +289,21 @@ Stmt:Exp SEMI{
                     $$=add_bisonnode("Stmt",@$.first_line);
                                 add_parentnode($$,5,$1,$2,$3,$4,$5);
           };
+          |error SEMI {
+            syntaxError+=1;
+          //  $$=add_bisonnode("Stmt",@$.first_line);
+           //   yyerrok;
+          };
+          | Exp error SEMI{
+            syntaxError+=1;
+          };
+          |RETURN Exp error{
+            syntaxError+=1;
+          };
+          |RETURN error SEMI{
+              syntaxError+=1;
+          }
+
 //7.1.6
 DefList:Def DefList{
                     $$=add_bisonnode("DefList",@$.first_line);
@@ -266,7 +317,14 @@ Def:Specifier DecList SEMI{
                     $$=add_bisonnode("Def",@$.first_line);
                                 add_parentnode($$,3,$1,$2,$3);
 
-};
+};|
+    Specifier error SEMI{
+      syntaxError+=1;
+    };
+  | 
+    Specifier DecList error{
+      syntaxError+=1;
+    };
 DecList:Dec{
                     $$=add_bisonnode("DecList",@$.first_line);
                                 add_parentnode($$,1,$1);
@@ -332,7 +390,7 @@ Exp:Exp ASSIGNOP Exp{
                                 add_parentnode($$,3,$1,$2,$3);
 
         };
-        |MINUS Exp{
+        |MINUS Exp %prec UMINUS{
                     $$=add_bisonnode("Exp",@$.first_line);
                                 add_parentnode($$,2,$1,$2);
 
@@ -376,6 +434,46 @@ Exp:Exp ASSIGNOP Exp{
                                 add_parentnode($$,1,$1);
 
         };
+        |Exp ASSIGNOP error{
+          syntaxError+=1;
+        };
+        |Exp AND error{
+          syntaxError+=1;
+        };
+        |Exp OR error{
+          syntaxError+=1;
+        }
+        |Exp RELOP error{
+          syntaxError+=1;
+        }
+        |Exp PLUS error{
+          syntaxError+=1;
+        }
+        |Exp MINUS error{
+          syntaxError+=1;
+        }
+        |Exp STAR error{
+          syntaxError+=1;
+        }
+        |Exp DIV error{
+          syntaxError+=1;
+        }
+        |LP error RP{
+          syntaxError+=1;
+        }
+        |MINUS error{
+          syntaxError+=1;
+        }
+        |NOT error{
+          syntaxError+=1;
+        }
+        |ID LP error RP{
+          syntaxError+=1;
+        }
+        |Exp LB error RB{
+          syntaxError+=1;
+        }
+        
 Args:Exp COMMA Args{
                     $$=add_bisonnode("Args",@$.first_line);
                                 add_parentnode($$,3,$1,$2,$3);
@@ -390,7 +488,8 @@ Args:Exp COMMA Args{
 #include "lex.yy.c"
 
 int yyerror(char*msg){
-  printf("Error type B at Line %d: %s\n",yylineno,msg);
+  syntaxError+=1;
+  printf("Error type B at Line %d: %s.\n",yylineno,msg);
 }
 
 
@@ -402,6 +501,12 @@ struct Node *add_bisonnode(char* Name,int column){
  Root->place=1;
  Root->type=OTHERS;
  Root->column=column;
+
+if(strcmp(Name,"Program")==0&&emptyflag==0){
+  Root->column=emptystart;
+}
+
+
  #ifdef DEBUGBISONNOW
  printf("name: %s\tline:%d\n",Name,column);
 #endif
@@ -456,34 +561,3 @@ void tree_search(struct Node* cur,int depth){
   tree_search(cur->child,depth+1);
     tree_search(cur->next_sib,depth);
 }
-// void tree_searchoutput(struct Node* cur,int depth,FILE*fp){//用于测试
-//  if(cur==NULL){
-//     return;
-//   }
-//   for(int i=0;i<depth;i++){
-//     printf("  ");
-//   }
-//     printf("%s",cur->name);
-//     if(cur->place==1){
-//       printf(" (%d)",cur->column);
-//     }
-//     else if(cur->place==0){
-//       if(cur->type==LEX_INT){
-//         printf(": %d",cur->int_contant);
-//       } 
-//       else if(cur->type==LEX_FLOAT){
-//         printf(": %f",cur->float_contant);
-//       }
-//       else if(cur->type==LEX_ID||cur->type==LEX_TYPE){
-//         printf(": %s",cur->string_contant);
-//       }else{
-//         ;
-//       }
-//     }
-//     printf("\n");
-//   tree_search(cur->child,depth+1);
-//     tree_search(cur->next_sib,depth);
-//   ;
-// }
-
-
