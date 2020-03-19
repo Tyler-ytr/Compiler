@@ -161,9 +161,11 @@ ExtDef:Specifier ExtDecList SEMI{
              |Specifier error SEMI{
                syntaxError+=1;
              };
-             |Specifier error{
-               syntaxError+=1;
-             }|
+           /*  |Specifier error{
+               syntaxError+=1; //shift/reduce error
+             }
+             */
+             |
              error Specifier SEMI{
                syntaxError+=1;
              }
