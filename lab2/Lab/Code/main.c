@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "syntax.tab.h"
 #include "common.h"
+#include "semantic.h"
 extern FILE*yyin;
 //#define YYDEBUG 1
 extern int yydebug;
@@ -27,6 +28,7 @@ yyparse();
 if(lexError==0&&syntaxError==0){
 //  printf("l: %d,\ts:%d\n",lexError,syntaxError);
 tree_search(root,0);
+semantic_check(root);
 }
 return 0;
 /*

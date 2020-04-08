@@ -155,7 +155,12 @@ ExtDef:Specifier ExtDecList SEMI{
              | Specifier FunDec CompSt{
                                                                       $$=add_bisonnode("ExtDef",@$.first_line);
                                                                      add_parentnode($$,3,$1,$2,$3); 
-             };|error SEMI{
+             };
+             |Specifier FunDec SEMI{
+               $$=add_bisonnode("ExtDef",@$.first_line);
+               add_parentnode($$,3,$1,$2,$3); 
+             };
+             |error SEMI{
                syntaxError+=1;
              };
              |Specifier error SEMI{
