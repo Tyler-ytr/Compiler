@@ -12,6 +12,7 @@ ExtDecList -> VarDec
 | VarDec COMMA ExtDecList
 
 */
+int depth=0;
 struct Node* getchild(struct Node* cur,int depth){
 	struct Node*temp=cur;
 	temp=temp->child;
@@ -27,7 +28,7 @@ struct Node* getchild(struct Node* cur,int depth){
 }
 
 int semantic_check(struct Node*cur){
-
+	depth=0;
 	Program_s(cur);
 }
 int Program_s(struct Node* cur){

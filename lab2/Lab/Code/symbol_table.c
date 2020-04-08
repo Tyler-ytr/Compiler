@@ -44,14 +44,67 @@ int init_symboltable(){
 	}
 	return 0;
 }
-int insert_symbol(Type type,char* name,int ifdef){
+
+int insert_symbol(Type type,char* name,int ifdef,int depth){
 	//to be done;
-
-
+	int value=hash_name(name);
+	printf("in insert");
+	if(global_head[value].head==NULL){
+		struct Symbol_node* temp=malloc(sizeof(struct Symbol_node));
+		temp->type=type;
+		temp->lnext=NULL;
+		strcpy(temp->name,name);
+		temp->depth=depth;
+		temp->ifdef=ifdef;
+		global_head[value].head=temp;
+	}else{
+		struct Symbol_node* head=global_head[value].head;
+		//头插;
+		struct Symbol_node* temp=malloc(sizeof(struct Symbol_node));
+		temp->type=type;
+		temp->lnext=head;
+		strcpy(temp->name,name);
+		temp->ifdef=ifdef;
+		temp->depth=depth;
+		global_head[value].head=temp;
+	}
 
 	return 0;
 }
+int query_symbol(Type* type,char*name,int*ifdef){
+	int value=hash_name(name);
+	printf("In query%s\n",name);
+	if(global_head[value].head==NULL){
+		printf("OMG!!!!!!!We don't have this symbol!!");
+		return -1;//没有命名,报错
+	}else{
+		struct Symbol_node*temp=global_head[value].head;
+		// printf("herer");
+		// if(temp->lnext==NULL){
+		// 	printf("herer");
+		// }
+		int flag=0;
+		while(temp!=NULL){
+			if(strcmp(temp->name,name)==0){
+			//	printf("able:%d\n",temp->type->kind);
+				*type=temp->type;
+				*ifdef=temp->ifdef;
+				flag=1;
+				return 0;
+			}
+			temp=temp->lnext;
+			if(temp==NULL){
+				break;
+			}
+		}
+		if(flag==0){
+			printf("OMG2!!!!!!!We don't have this symbol!!");
+			return -1;
+		}
 
+	}
+
+}
 int delete_symbol(Type type,char*name,int*ifdef){
 	//to be done;
 
@@ -65,7 +118,7 @@ int check_type(Type A,Type B){
 
 
 //备用项;
-unsigned int hash_pjw(char*name){
+unsigned int hash_name(char*name){
 	unsigned int val=0,i;
 	for(;*name;++name){
 		val=(val<<2)+*name;

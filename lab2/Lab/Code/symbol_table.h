@@ -1,8 +1,9 @@
 #ifndef SYMBOL_TABLE_H
 #define SYMBOL_TABLE_H
-
+#include <stdio.h>
+#include <stdlib.h>
 #include "common.h"
-
+#include <string.h>
 
 
 
@@ -36,6 +37,7 @@ struct Symbol_node{
 	Type type;//该符号表节点的类型;
 	struct Symbol_node* lnext;//在hash中同一个值的下一个;行next,可能未来会有十字链表;
 	
+	char name[32];
 	int ifdef;//是定义还是声明?定义是1,声明是0
 	int n,m;//表示行号和列号,备用;
 	int depth;//深度信息,备用;
@@ -47,13 +49,13 @@ struct Symbol_bucket{
 
 };//全局符号表头;
 
-int insert_symbol(Type type,char* name,int ifdef);
-int query_symbol(Type type,char*name,int*ifdef);//给名字查type和ifdef;
+int insert_symbol(Type type,char* name,int ifdef,int depth);
+int query_symbol(Type* type,char*name,int*ifdef);//给名字查type和ifdef;
 int init_symboltable();
 int delete_symbol(Type type,char*name,int*ifdef);//删除符号;
 int check_type(Type A,Type B);//结构等价判断;0表示不同,1表示相同;
-
-
+unsigned int hash_name(char*name);
+//需要修改,因为没有考虑要求2.2;
 
 
 #endif
