@@ -16,9 +16,9 @@ struct Type_{
 		//基本类型
 		int basic;//0表示int,1表示float;
 		//数组类型信息包括元素类型与数组大小构成
-		struct{ Type elem;int size;}array;
+		struct{ Type elem;int size;}array_;
 		//结构体类型的信息是一个链表
-		struct{FieldList structure;char *name;}structure;
+		struct{FieldList structure;char *name;}structure_;
 		struct{
 			Type returnparam;//返回的参数类型
 			int paramnums;//输入的参数数量
@@ -51,6 +51,8 @@ struct Symbol_bucket{
 
 int insert_symbol(Type type,char* name,int ifdef,int depth);
 int query_symbol(Type* type,char*name,int*ifdef);//给名字查type和ifdef;如果不存在返回-1,否则返回0
+int query_struct(Type*type,char*name);
+int insert_struct(Type type,char*name);
 int init_symboltable();
 int delete_symbol(Type type,char*name,int*ifdef);//删除符号;
 int check_type(Type A,Type B);//结构等价判断;0表示不同,1表示相同;

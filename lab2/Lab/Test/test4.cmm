@@ -8,7 +8,11 @@ struct Position
 {
 int y;
 };
-
+struct {
+int k;
+};
+struct able{
+};
 int main()
 {
 }
