@@ -18,7 +18,7 @@ struct Type_{
 		//数组类型信息包括元素类型与数组大小构成
 		struct{ Type elem;int size;}array;
 		//结构体类型的信息是一个链表
-		struct{FieldList structure;}structure;
+		struct{FieldList structure;char *name;}structure;
 		struct{
 			Type returnparam;//返回的参数类型
 			int paramnums;//输入的参数数量
@@ -45,12 +45,12 @@ struct Symbol_node{
 
 struct Symbol_bucket{
 	struct Symbol_node* head;//指向该hash值的第一个节点;
-	//暂定;
+	struct Symbol_bucket*next;//仅在用于控制作用域的局部符号表(链表)中使用
 
 };//全局符号表头;
 
 int insert_symbol(Type type,char* name,int ifdef,int depth);
-int query_symbol(Type* type,char*name,int*ifdef);//给名字查type和ifdef;
+int query_symbol(Type* type,char*name,int*ifdef);//给名字查type和ifdef;如果不存在返回-1,否则返回0
 int init_symboltable();
 int delete_symbol(Type type,char*name,int*ifdef);//删除符号;
 int check_type(Type A,Type B);//结构等价判断;0表示不同,1表示相同;

@@ -32,23 +32,29 @@ a->a1->a2
 4.要求2.3结构等价,可以在符号表里面实现一个check typeA,B的布尔函数解决;
 
 */
+//结构体也需要一个符号表来存;暂记
 
 /*基本内容*/
 #define SYMBOL_LEN 0x3fff
 struct Symbol_bucket global_head[SYMBOL_LEN];
-
+struct Symbol_bucket struct_head[SYMBOL_LEN];
+struct Symbol_bucket* stack_head=NULL;//每进入一个大括号的时候往链表中插一个新的节点;
 int init_symboltable(){
 	//to be done
 	for(int i=0;i<SYMBOL_LEN;i++){
 		global_head[i].head=NULL;
+		struct_head[i].head=NULL;
 	}
+	stack_head=malloc(sizeof(struct Symbol_bucket));
+	stack_head->next=NULL;
+	stack_head->head=NULL;
 	return 0;
 }
 
 int insert_symbol(Type type,char* name,int ifdef,int depth){
 	//to be done;
 	int value=hash_name(name);
-	printf("in insert");
+	printf("in insert\n");
 	if(global_head[value].head==NULL){
 		struct Symbol_node* temp=malloc(sizeof(struct Symbol_node));
 		temp->type=type;
@@ -71,12 +77,68 @@ int insert_symbol(Type type,char* name,int ifdef,int depth){
 
 	return 0;
 }
-int query_symbol(Type* type,char*name,int*ifdef){
+int insert_struct(Type type,char*name){
+	int value=hash_name(name);
+	printf("in insert struct\n");
+	if(struct_head[value].head==NULL){
+		struct Symbol_node*temp=malloc(sizeof(struct Symbol_node));
+		temp->type=type;
+		temp->lnext=NULL;
+		strcpy(temp->name,name);
+		struct_head[value].head=temp;
+	}else{
+		//结构体不允许重名;
+		struct Symbol_node*head=struct_head[value].head;
+		if(strcmp(head->name,name)==0){
+			printf("In insert_struct redifined struct\n");
+			return -1;
+		}
+		else{
+			struct Symbol_node*temp=malloc(sizeof(struct Symbol_node));
+			temp->type=type;
+			temp->lnext=head;
+			strcpy(temp->name,name);
+			struct_head[value].head=temp;//头插;
+		}
+		;
+	}
+	return 0;
+}
+
+int query_struct(Type*type,char*name){//存在 return 0,不存在return -1
+	int value=hash_name(name);
+	printf("In struct query\n");
+	if(struct_head[value].head==NULL){
+		return -1;//不存在
+	}
+	else{
+		struct Symbol_node*temp=struct_head[value].head;
+		int flag=0;
+		while(temp!=NULL){
+			if(strcmp(temp->name,name)==0){
+				*type=temp->type;
+				flag=1;
+				return 0;//找到了
+			}
+			temp=temp->lnext;
+			if(temp==NULL){
+				break;
+			}
+		}
+		if(flag==0){
+			return -1;//没有找到;
+		}
+		
+	}
+
+}
+
+int query_symbol(Type* type,char*name,int*ifdef){//存在 return 0,不存在return -1
 	int value=hash_name(name);
 	printf("In query%s\n",name);
 	if(global_head[value].head==NULL){
-		printf("OMG!!!!!!!We don't have this symbol!!");
-		return -1;//没有命名,报错
+	//	printf("OMG!!!!!!!We don't have this symbol!!");
+		return -1;//没有命名,
 	}else{
 		struct Symbol_node*temp=global_head[value].head;
 		// printf("herer");
@@ -98,12 +160,10 @@ int query_symbol(Type* type,char*name,int*ifdef){
 			}
 		}
 		if(flag==0){
-			printf("OMG2!!!!!!!We don't have this symbol!!");
-			return -1;
+		//	printf("OMG2!!!!!!!We don't have this symbol!!");
+			return -1;//没有找到
 		}
-
 	}
-
 }
 int delete_symbol(Type type,char*name,int*ifdef){
 	//to be done;

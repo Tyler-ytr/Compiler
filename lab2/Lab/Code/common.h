@@ -1,7 +1,7 @@
 #ifndef TREE_H
 #define TREE_H
 #include <string.h>
-
+#include <stdio.h>
 typedef enum {
     LEX_INT=0,
     LEX_FLOAT=1,
