@@ -34,10 +34,10 @@ struct FieldList_{
 	FieldList tail;//下一个域
 };
 struct Symbol_node{
-	Type type;//该符号表节点的类型;
+	//Type type;//该符号表节点的类型;
 	struct Symbol_node* lnext;//在hash中同一个值的下一个;行next,可能未来会有十字链表;
-	
-	char name[32];
+	struct FieldList_ field;//用来存类型+名字;一般的tail为NULL;
+	//char name[32];
 	int ifdef;//是定义还是声明?定义是1,声明是0
 	int n,m;//表示行号和列号,备用;
 	int depth;//深度信息,备用;
@@ -51,6 +51,7 @@ struct Symbol_bucket{
 
 int insert_symbol(Type type,char* name,int ifdef,int depth);
 int query_symbol(Type* type,char*name,int*ifdef);//给名字查type和ifdef;如果不存在返回-1,否则返回0
+int query_symbol_name(char*name);//仅仅指查名字;
 int query_struct(Type*type,char*name);
 int insert_struct(Type type,char*name);
 int init_symboltable();

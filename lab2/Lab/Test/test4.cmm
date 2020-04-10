@@ -3,13 +3,21 @@ struct Position
 {
 float x;
 };
-
+/*
+int y;
 struct Position
 {
 int y;
 };
-struct {
+*/
 int k;
+struct A{
+int k;
+int temp[10][3][2];
+struct Position temp;
+};
+struct {
+int b;
 };
 struct able{
 };

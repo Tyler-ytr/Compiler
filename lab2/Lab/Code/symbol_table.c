@@ -57,9 +57,10 @@ int insert_symbol(Type type,char* name,int ifdef,int depth){
 	printf("in insert\n");
 	if(global_head[value].head==NULL){
 		struct Symbol_node* temp=malloc(sizeof(struct Symbol_node));
-		temp->type=type;
+		//temp->type=type;
+		temp->field.type=type;
 		temp->lnext=NULL;
-		strcpy(temp->name,name);
+		strcpy(temp->field.name,name);
 		temp->depth=depth;
 		temp->ifdef=ifdef;
 		global_head[value].head=temp;
@@ -67,9 +68,9 @@ int insert_symbol(Type type,char* name,int ifdef,int depth){
 		struct Symbol_node* head=global_head[value].head;
 		//头插;
 		struct Symbol_node* temp=malloc(sizeof(struct Symbol_node));
-		temp->type=type;
+		temp->field.type=type;
 		temp->lnext=head;
-		strcpy(temp->name,name);
+		strcpy(temp->field.name,name);
 		temp->ifdef=ifdef;
 		temp->depth=depth;
 		global_head[value].head=temp;
@@ -82,22 +83,22 @@ int insert_struct(Type type,char*name){
 	printf("in insert struct\n");
 	if(struct_head[value].head==NULL){
 		struct Symbol_node*temp=malloc(sizeof(struct Symbol_node));
-		temp->type=type;
+		temp->field.type=type;
 		temp->lnext=NULL;
-		strcpy(temp->name,name);
+		strcpy(temp->field.name,name);
 		struct_head[value].head=temp;
 	}else{
 		//结构体不允许重名;
 		struct Symbol_node*head=struct_head[value].head;
-		if(strcmp(head->name,name)==0){
+		if(strcmp(head->field.name,name)==0){
 			printf("In insert_struct redifined struct\n");
 			return -1;
 		}
 		else{
 			struct Symbol_node*temp=malloc(sizeof(struct Symbol_node));
-			temp->type=type;
+			temp->field.type=type;
 			temp->lnext=head;
-			strcpy(temp->name,name);
+			strcpy(temp->field.name,name);
 			struct_head[value].head=temp;//头插;
 		}
 		;
@@ -115,8 +116,8 @@ int query_struct(Type*type,char*name){//存在 return 0,不存在return -1
 		struct Symbol_node*temp=struct_head[value].head;
 		int flag=0;
 		while(temp!=NULL){
-			if(strcmp(temp->name,name)==0){
-				*type=temp->type;
+			if(strcmp(temp->field.name,name)==0){
+				*type=temp->field.type;
 				flag=1;
 				return 0;//找到了
 			}
@@ -147,9 +148,9 @@ int query_symbol(Type* type,char*name,int*ifdef){//存在 return 0,不存在retu
 		// }
 		int flag=0;
 		while(temp!=NULL){
-			if(strcmp(temp->name,name)==0){
+			if(strcmp(temp->field.name,name)==0){
 			//	printf("able:%d\n",temp->type->kind);
-				*type=temp->type;
+				*type=temp->field.type;
 				*ifdef=temp->ifdef;
 				flag=1;
 				return 0;

@@ -142,6 +142,7 @@ Tag -> ID
 		//To be done
 				printf("herererer\n\n");
 				char*struct_name=tempnode2->string_contant;
+				printf("struct name:%s\n",struct_name);
 				if(query_struct(&type,struct_name)==0){
 					error_s(16,tempnode2->column,struct_name,NULL);
 					return NULL;
@@ -157,6 +158,9 @@ Tag -> ID
 					Dec -> VarDec
 					| VarDec ASSIGNOP Exp
 					*/
+				
+					type->u.structure_.name=(char*)malloc(sizeof(char)*32);
+					strcpy(type->u.structure_.name,struct_name);//赋值struct name;用于返回给上层;同时struct name作为hash值将填到struct hash表里面;
 					struct Node* DefListnode=getchild(tempnode0,3);
 					if(strcmp(DefListnode->name,"DefList")!=0){
 						//空结构体;
@@ -164,10 +168,14 @@ Tag -> ID
 						//assert(0);
 						type->u.structure_.structure=NULL;//域不存在;
 					}else{
-						;
+						;//这里相当于DefList; 
 						struct Node* Defnode=getchild(DefListnode,0);
+						if(strcmp(Defnode->name,"Def")!=0){
+							printf("To be done!!:%s\n",Defnode->name);
+						}
 						if(Defnode!=NULL){
-							FieldList temp=Def_struct(Defnode);
+							printf("here");
+							FieldList tempfield=Def_struct(Defnode);
 						}
 						//需要修改;
 
@@ -183,7 +191,8 @@ Tag -> ID
 			}
 			;
 		}else if(strcmp(tempnode1->name,"Tag")==0){
-			;		//To be done
+			;		//To be done 需要检查这个结构体在不在结构体表里面;
+
 		}else if(strcmp(tempnode1->name,"LC")==0){
 			;//匿名结构 To be dones
 			printf("匿名结构\n");
@@ -196,7 +205,7 @@ Tag -> ID
 		}
 
 	}else{
-		printf("Specifier bug,child 0 is neither TYPE nor StructSpecifier\n");
+		printf("Specifier bug,child 0 is neither TYPE nor StructSpecifier:%s\n",tempnode0->name);
 		assert(0);
 	}
 
@@ -208,16 +217,85 @@ Tag -> ID
 }
 
 FieldList Def_struct(struct Node*cur){
-/*
-	DefList -> Def DefList
-		| 空
+/*这里处理好Def;
 	Def -> Specifier DecList SEMI
 	DecList -> Dec
 		| Dec COMMA DecList
-	Dec -> VarDec
+	Dec -> VarDec// 给出FieldList里面的内容,给出数组或者ID
 		| VarDec ASSIGNOP Exp//报错！
-*/
+	需要给一个连好了的FieldList链表给上一层;
+*/	printf("Def_struct\n");
+		struct Node* Specifier_node=getchild(cur,0);
+		Type nowtype=Specifier_s(Specifier_node);
+		struct Node* DecList_node=getchild(cur,1);
+		if(strcmp(DecList_node->name,"DecList")!=0){
+			printf("Def_struct bug of DecList!\n");
+			assert(0);
+		}
+		struct Node*temp_declist=DecList_node;
+
+
+
+
 	
+}
+FieldList VarDec_s(struct Node*cur,Type type){
+	FieldList field=(FieldList)(malloc(sizeof(struct FieldList_)));
+/*	VarDec -> ID
+| VarDec LB INT RB
+*/
+	struct Node* tempnode=getchild(cur,0);
+	if(strcmp(tempnode->name,"ID")==0){
+		field->type=type;
+		strcmp(field->name,tempnode->string_contant);
+		return field;
+	}else{
+		//递归;
+		//首先获得名字;
+		while(tempnode->child!=NULL){
+			tempnode=tempnode->child;
+		}
+		if(strcmp(tempnode->name,"ID")!=0){
+			printf("Vardec bug!! check the while!\n");
+			assert(0);
+		}
+		strcmp(field->name,tempnode->string_contant);
+		tempnode=getchild(cur,0);
+		//现在是数组;a[10][3][2] 访问顺序:2->3->10->ID;
+		Type head=(Type)malloc(sizeof(struct Type_));
+		Type temp_type=NULL;
+		struct Node*INT_node=NULL;
+		while(tempnode->child!=NULL){
+			Type cur_type=(Type)malloc(sizeof(struct Type_));
+			INT_node=getchild(tempnode,2);
+			if(strcmp(INT_node->name,"INT")!=0){
+				printf("Vardecbug! INT error\n");
+				assert(0);
+			}
+			cur_type->kind=ARRAY;
+			cur_type->u.array_.size=INT_node->int_contant;
+			if(temp_type==NULL){//对应2;
+				cur_type->u.array_.elem=type;
+				temp_type=cur_type;//第二步:3->temptype(2)
+			}else{
+				cur_type->u.array_.elem=temp_type;
+				temp_type=cur_type;
+			}
+			tempnode=tempnode->child;
+
+		}
+		if(strcmp(tempnode->name,"ID")!=0){
+			printf("Vardec bug!! check the while!\n");
+			assert(0);
+		}
+		field->type=temp_type;
+
+		return field;//可以优化 记得debug;
+
+
+
+	}
+
 }
 
 
