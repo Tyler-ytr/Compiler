@@ -62,6 +62,7 @@ int delete_symbol(Type type,char*name,int*ifdef);//删除符号;
 int check_type(Type A,Type B);//结构等价判断;0表示不同,1表示相同;
 unsigned int hash_name(char*name);
 //需要修改,因为没有考虑要求2.2;
-
+struct Symbol_bucket *enter_scope();//进入作用域;返回一个函数头;
+struct Symbol_bucket* exit_scope();//出作用域,删除;返回尾部作用域;
 
 #endif

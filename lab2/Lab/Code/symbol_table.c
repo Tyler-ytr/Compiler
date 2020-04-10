@@ -39,17 +39,33 @@ a->a1->a2
 #define SYMBOL_LEN 0x3fff
 struct Symbol_bucket global_head[SYMBOL_LEN];
 struct Symbol_bucket struct_head[SYMBOL_LEN];
-struct Symbol_bucket* stack_head=NULL;//每进入一个大括号的时候往链表中插一个新的节点;
+//struct Symbol_bucket* stack_head=NULL;//每进入一个大括号的时候往链表中插一个新的节点;
+struct Symbol_bucket* scope_head=NULL;//作用域控制链表;
+
 int init_symboltable(){
 	//to be done
 	for(int i=0;i<SYMBOL_LEN;i++){
 		global_head[i].head=NULL;
 		struct_head[i].head=NULL;
 	}
-	stack_head=malloc(sizeof(struct Symbol_bucket));
-	stack_head->next=NULL;
-	stack_head->head=NULL;
+	scope_head=malloc(sizeof(struct Symbol_bucket));
+	scope_head->next=NULL;
+	scope_head->head=NULL;
 	return 0;
+}
+struct Symbol_bucket*enter_scope(){
+	struct Symbol_bucket *result=malloc(sizeof(struct Symbol_bucket));
+	result->next=NULL;
+	result->head=NULL;
+	struct Symbol_bucket *tail=scope_head;
+	while(tail->next!=NULL){
+		tail=tail->next;
+	}
+	tail->next=result;
+	return result;
+}
+struct Symbol_bucket* exit_scope(){
+	;//To be done; 主要要做一个十字链表的插入和删除;
 }
 
 int insert_symbol(Type type,char* name,int ifdef,int depth){
