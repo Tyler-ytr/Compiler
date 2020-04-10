@@ -85,7 +85,10 @@ int insert_struct(Type type,char*name){
 		struct Symbol_node*temp=malloc(sizeof(struct Symbol_node));
 		temp->field.type=type;
 		temp->lnext=NULL;
-		strcpy(temp->field.name,name);
+		//strcpy(temp->field.name,name);
+		char*structsymbol_name=(char*)malloc(strlen(name)+1);
+		strcpy(structsymbol_name,name);
+		temp->structsymbol_name=structsymbol_name;
 		struct_head[value].head=temp;
 	}else{
 		//结构体不允许重名;
@@ -116,7 +119,7 @@ int query_struct(Type*type,char*name){//存在 return 0,不存在return -1
 		struct Symbol_node*temp=struct_head[value].head;
 		int flag=0;
 		while(temp!=NULL){
-			if(strcmp(temp->field.name,name)==0){
+			if(strcmp(temp->structsymbol_name,name)==0){
 				*type=temp->field.type;
 				flag=1;
 				return 0;//找到了
@@ -133,7 +136,16 @@ int query_struct(Type*type,char*name){//存在 return 0,不存在return -1
 	}
 
 }
-
+int query_struct_name(char*name){
+	Type nulltype=(Type)malloc(sizeof(struct Type_));
+	
+	return query_struct(&nulltype,name);
+}
+int query_symbol_name(char*name){
+	Type nulltype=(Type)malloc(sizeof(struct Type_));
+	int nulldef;
+	return query_symbol(&nulltype,name,&nulldef);
+}
 int query_symbol(Type* type,char*name,int*ifdef){//存在 return 0,不存在return -1
 	int value=hash_name(name);
 	printf("In query%s\n",name);
