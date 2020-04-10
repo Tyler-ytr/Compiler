@@ -1,0 +1,12 @@
+int temp(int a,float b){
+	a=1;
+	b=2;
+	return a;
+}
+int main(){
+
+	int a1=0;
+	float a2=0;
+	int c=temp(a1,a2);
+	return 0;
+}

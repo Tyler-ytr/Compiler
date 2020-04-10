@@ -35,6 +35,7 @@ struct FieldList_{
 };
 struct Symbol_node{
 	//Type type;//该符号表节点的类型;
+	enum { VARIABLE=0, STRUCT_NAME=1, _FUNCTION_NAME=2 } kind;
 	struct Symbol_node* lnext;//在hash中同一个值的下一个;行next,可能未来会有十字链表;
 	struct FieldList_ field;//用来存类型+名字;一般的tail为NULL;
 	//char name[32];
