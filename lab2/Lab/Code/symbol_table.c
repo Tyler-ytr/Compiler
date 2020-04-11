@@ -42,7 +42,7 @@ struct Symbol_bucket struct_head[SYMBOL_LEN];
 //struct Symbol_bucket* stack_head=NULL;//每进入一个大括号的时候往链表中插一个新的节点;
 struct Symbol_bucket* scope_head=NULL;//作用域控制链表;
 
-int init_symboltable(){
+struct Symbol_bucket* init_symboltable(){
 	//to be done
 	for(int i=0;i<SYMBOL_LEN;i++){
 		global_head[i].head=NULL;
@@ -51,7 +51,7 @@ int init_symboltable(){
 	scope_head=malloc(sizeof(struct Symbol_bucket));
 	scope_head->next=NULL;
 	scope_head->head=NULL;
-	return 0;
+	return scope_head;
 }
 struct Symbol_bucket*enter_scope(){
 	struct Symbol_bucket *result=malloc(sizeof(struct Symbol_bucket));
@@ -66,6 +66,121 @@ struct Symbol_bucket*enter_scope(){
 }
 struct Symbol_bucket* exit_scope(){
 	;//To be done; 主要要做一个十字链表的插入和删除;
+	printf("exit scope\n");
+	struct Symbol_bucket*tail=scope_head;
+	struct Symbol_bucket* tailbefore=scope_head;
+	while(tail->next!=NULL){
+		//printf("herer\n");
+		tailbefore=tail;
+		tail=tail->next;
+	}
+	if(tail==scope_head){
+		printf("Can't exit scope_head\n");
+		assert(0);
+	}else if(tail->head!=NULL){
+			printf("herer\n");
+
+			struct Symbol_node* scope_tail=tail->head;//目的是这个纵向链表的尾部
+			struct Symbol_node* scope_tail_before=scope_tail;//目的是这个纵向链表的尾部的前一个;
+			int cnt=0;//记录链表的个数
+
+			while(scope_tail->cnext!=NULL){
+				scope_tail_before=scope_tail;
+				scope_tail=scope_tail->cnext;
+				cnt+=1;
+			}
+			struct  Symbol_node** scope_list=(struct Symbol_node**)malloc(sizeof(struct Symbol_node**)*(cnt+2));
+			scope_tail=tail->head;
+			scope_tail_before=scope_tail;
+			cnt=0;
+			scope_list[cnt]=scope_tail;//第一个
+			while(scope_tail->cnext!=NULL){
+				scope_list[cnt]=scope_tail;
+				scope_tail_before=scope_tail;
+				scope_tail=scope_tail->cnext;
+				cnt+=1;
+			}
+			scope_list[cnt]=scope_tail;//最后一个;
+			int tempcnt=cnt;
+			//首先找到这个symbol在table里面的前一项,然后横向删除,然后纵向删除;
+			for(;cnt>=0;cnt--){
+				printf("cnt:%d",cnt);
+				int value=hash_name(scope_list[cnt]->field.name);
+				if(global_head[value].head==NULL){
+					printf("drop table bug, %s not found!\n",scope_list[cnt]->field.name);
+					assert(0);
+				}
+				
+				struct Symbol_node*temp=global_head[value].head;//横向查找;
+				int flag=0;
+				if(temp==scope_list[cnt]){//global_head的头部就是要找的
+					//printf("here\n\n");
+					struct Symbol_node*temp_next=scope_list[cnt]->lnext;
+					global_head[value].head=temp_next;
+					free(scope_list[cnt]);
+				}else{//global_head的头部不是要找的;b,head->a->b temp = head;temp=a;temp->lnext=b;退出;
+				while(temp->lnext!=NULL){
+					if(temp->lnext==scope_list[cnt]){
+						flag=1;
+						break;
+					}
+					temp=temp->lnext;
+				}
+				if(flag==0){
+					printf("drop table bug, %s not found!\n",scope_list[cnt]->field.name);
+					assert(0);
+				}
+				//temp----> scope_list[cnt]----> temp_next
+				//scope_list[cnt-1]--->scope_list[cnt]
+				struct Symbol_node*temp_next=scope_list[cnt]->lnext;
+				temp->lnext=temp_next;
+				free(scope_list[cnt]);
+				}
+			}
+			
+		//	free(tail->head);//也就是free(scope_list[0]);
+
+			free(scope_list);
+			scope_list=NULL;
+	}
+	//释放scope链表的tail;
+	tailbefore->next=NULL;
+	free(tail);
+	tail=NULL;
+	return tailbefore;
+}
+void show_global_table(){
+	printf("-----------------------global_table_below----------------------\n");
+	for(int i=0;i<SYMBOL_LEN;i++){
+		if(global_head[i].head!=NULL){
+			printf("i:%d ",i);
+			struct Symbol_node*temp=global_head[i].head;
+			while(temp!=NULL){
+					printf("%s ,",temp->field.name);
+					temp=temp->lnext;
+			}
+			printf("\n");
+		};
+	};
+	printf("-----------------------global_table_above----------------------\n");
+}
+void show_scope_table(){
+	printf("-----------------------scope_table_below----------------------\n");
+	struct Symbol_bucket*temp=scope_head;
+	int cnt=0;
+	while(temp!=NULL){
+		printf("cnt: %d ",cnt);	
+		struct Symbol_node *temp1=temp->head;
+		while(temp1!=NULL){
+			printf("%s ",temp1->field.name);
+			temp1=temp1->cnext;
+		}
+		printf("\n");
+		temp=temp->next;
+		cnt+=1;
+	}
+
+	printf("-----------------------scope_table_above----------------------\n");
 }
 
 int insert_symbol(Type type,char* name,int ifdef,int depth){
@@ -95,6 +210,47 @@ int insert_symbol(Type type,char* name,int ifdef,int depth){
 
 	return 0;
 }
+int insert_symbol2(struct Symbol_node*p,struct Symbol_bucket* scope){
+	
+	char *symbol_name=p->field.name;
+	printf("in insert2:%s\n",symbol_name);
+	if(p->cnext!=NULL||p->lnext!=NULL){
+		printf("p->cnext/lnext should be NULL!\n");
+		assert(0);
+
+	}
+	//struct Symbol_node* newer=()malloc
+	//不确定是否需要新建一个节点赋值;
+	int value=hash_name(symbol_name);
+	//假设这个p从未在表里面出现(用insert之前使用者应该先query);
+	//p->cnext=NULL;
+	//p->lnext=NULL;
+	if(scope==NULL){
+		printf("insert_symbol2:Scope is NULL!\n");
+		assert(0);
+	}else
+	{
+		struct Symbol_node*scope_tail=scope->head;
+		if(scope_tail==NULL){
+			scope->head=p;
+			//scope->head->lnext=NULL;
+			
+		}else{
+			while(scope_tail->cnext!=NULL){
+				scope_tail=scope_tail->cnext;
+			}//找到当前控制域的尾节点;
+			scope_tail->cnext=p;
+		}
+		if(global_head[value].head==NULL){
+			global_head[value].head=p;
+		}else{
+			struct Symbol_node*head=global_head[value].head;
+			p->lnext=head;
+			global_head[value].head=p;
+		}
+	}
+}
+
 int insert_struct(Type type,char*name){
 	int value=hash_name(name);
 	printf("in insert struct\n");

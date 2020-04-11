@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "common.h"
 #include <string.h>
+#include <assert.h>
 
 
 
@@ -37,11 +38,11 @@ struct Symbol_node{
 	//Type type;//该符号表节点的类型;
 	enum { VARIABLE=0, STRUCT_NAME=1, _FUNCTION_NAME=2 } kind;
 	struct Symbol_node* lnext;//在hash中同一个值的下一个;行next,可能未来会有十字链表;
+	struct Symbol_node* cnext;//用来控制作用域的,主要是退出compst等的时候删除相应的元素,初始化为NULL;
 	struct FieldList_ field;//用来存类型+名字;一般的tail为NULL;
 	//char name[32];
-	char* structsymbol_name;
+	char* structsymbol_name;//sturct 里面的元素专用,防止超过32位;
 	int ifdef;//是定义还是声明?定义是1,声明是0
-	int n,m;//表示行号和列号,备用;
 	int depth;//深度信息,备用;
 };
 
@@ -52,17 +53,20 @@ struct Symbol_bucket{
 };//全局符号表头;
 
 int insert_symbol(Type type,char* name,int ifdef,int depth);
+int insert_symbol2(struct Symbol_node*p,struct Symbol_bucket* scope );//使用的时候p 的 lnext,cnext需要首先赋值NULL;
 int query_symbol(Type* type,char*name,int*ifdef);//给名字查type和ifdef;如果不存在返回-1,否则返回0
 int query_struct_name(char*name);//仅仅指查名字;
 int query_symbol_name(char*name);//仅仅指查名字;
 int query_struct(Type*type,char*name);//结构体域里面使用的;
 int insert_struct(Type type,char*name);
-int init_symboltable();
+struct Symbol_bucket* init_symboltable();
 int delete_symbol(Type type,char*name,int*ifdef);//删除符号;
 int check_type(Type A,Type B);//结构等价判断;0表示不同,1表示相同;
 unsigned int hash_name(char*name);
 //需要修改,因为没有考虑要求2.2;
 struct Symbol_bucket *enter_scope();//进入作用域;返回一个函数头;
 struct Symbol_bucket* exit_scope();//出作用域,删除;返回尾部作用域;
+void show_global_table();
+void show_scope_table();
 
 #endif

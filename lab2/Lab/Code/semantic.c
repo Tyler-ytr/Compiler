@@ -15,6 +15,7 @@ ExtDecList -> VarDec
 
 int depth_=0;
 int struct_no_name_cnt=0;
+struct Symbol_bucket* global_scope=NULL;
 struct Node* getchild(struct Node* cur,int depth){
 	struct Node*temp=cur;
 	temp=temp->child;
@@ -35,11 +36,12 @@ int semantic_check(struct Node*cur){
 }
 int Program_s(struct Node* cur){
 	//To be done ; 一些init工作;
-	if(init_symboltable()==0){
-		;
-	}else{
-		printf("Failed to init symboltable in Program_s");
-	}
+	// if(init_symboltable()==0){
+	// 	;
+	// }else{
+	// 	printf("Failed to init symboltable in Program_s");
+	// }
+	global_scope=init_symboltable();
 	//printf("In program_s\n\n");
 	struct Node* ExtDefListnode=getchild(cur,0);
 	ExtDefList_s(ExtDefListnode);
