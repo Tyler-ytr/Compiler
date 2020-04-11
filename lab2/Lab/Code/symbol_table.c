@@ -41,6 +41,22 @@ struct Symbol_bucket global_head[SYMBOL_LEN];
 struct Symbol_bucket struct_head[SYMBOL_LEN];
 //struct Symbol_bucket* stack_head=NULL;//每进入一个大括号的时候往链表中插一个新的节点;
 struct Symbol_bucket* scope_head=NULL;//作用域控制链表;
+struct dec_func*dec_func_head=NULL;//函数定义链表,最后遍历检查;
+void push_function_dec(char*name){
+	if(dec_func_head==NULL){
+		dec_func_head=(struct dec_func*)malloc(sizeof(struct dec_func));
+		strcpy(dec_func_head->name,name);
+		dec_func_head->next=NULL;
+	}else{
+		struct dec_func*temp=dec_func_head;
+		while(temp->next!=NULL){
+			temp=temp->next;
+		}
+		temp->next=(struct dec_func*)malloc(sizeof(struct dec_func));
+		strcpy(temp->next->name,name);
+		temp->next->next=NULL;
+	}
+}
 
 struct Symbol_bucket* init_symboltable(){
 	//to be done
@@ -314,12 +330,12 @@ int query_struct_name(char*name){
 	
 	return query_struct(&nulltype,name);
 }
-int query_symbol_name(char*name){
+int query_symbol_name(char*name,int depth){
 	Type nulltype=(Type)malloc(sizeof(struct Type_));
 	int nulldef;
-	return query_symbol(&nulltype,name,&nulldef);
+	return query_symbol(&nulltype,name,&nulldef,depth);
 }
-int query_symbol(Type* type,char*name,int*ifdef){//存在 return 0,不存在return -1
+int query_symbol(Type* type,char*name,int*ifdef,int depth){//存在 return 0,不存在return -1
 	int value=hash_name(name);
 	printf("In query%s\n",name);
 	if(global_head[value].head==NULL){
@@ -333,7 +349,7 @@ int query_symbol(Type* type,char*name,int*ifdef){//存在 return 0,不存在retu
 		// }
 		int flag=0;
 		while(temp!=NULL){
-			if(strcmp(temp->field.name,name)==0){
+			if(strcmp(temp->field.name,name)==0&&depth==temp->depth){//在同一层才算被找到,否则不算;
 			//	printf("able:%d\n",temp->type->kind);
 				*type=temp->field.type;
 				*ifdef=temp->ifdef;
@@ -351,13 +367,102 @@ int query_symbol(Type* type,char*name,int*ifdef){//存在 return 0,不存在retu
 		}
 	}
 }
+
+
 int delete_symbol(Type type,char*name,int*ifdef){
 	//to be done;
 
 	return 0;
 }
 int check_type(Type A,Type B){
+	FieldList A_f=A->u.structure_.structure;
+	FieldList B_f=B->u.structure_.structure;
+	if(A==B){
+		return 1;
+	}
+	else{
+		if(A==NULL){
+			printf("Type A is NULL\n");
+			assert(0);
+			return 0;
+		}else if(B==NULL){
+			printf("Type B is NULL\n");
+			assert(0);
+			return 0;
+		}
+		if(A->kind!=B->kind){
+			return 0;
+		}
+		else{
+			// FieldList A_f=A->u.structure_.structure;
+			// FieldList B_f=B->u.structure_.structure;
+			switch (A->kind){
+				case BASIC:
+					return A->u.basic==B->u.basic;
+					break;
+				case ARRAY:
+					if(A->u.array_.size!=B->u.array_.size){
+						return 0;
+					}
+					//否则size一样,比较type
+					int result1=check_type(A->u.array_.elem,B->u.array_.elem);
+					return result1;
+					break;
+				case STRUCTURE:{
+					//神必报错:a label can only be part of a statement and a declaration is not a statement,加了一个大括号就好了;
+					FieldList A_f=A->u.structure_.structure;
+					FieldList B_f=B->u.structure_.structure;
+					while(A_f!=NULL&&B_f!=NULL){
+						A_f=A_f->tail;
+						B_f=B_f->tail;
+						;
+					}
+					if(A_f!=NULL||B_f!=NULL){
+						return 0;
+					}
+					//保证两者等长度;
+					A_f=A->u.structure_.structure;
+					B_f=B->u.structure_.structure;
+					int flag=0;
+					while(A_f!=NULL&&B_f!=NULL){
+						if(check_type(A_f->type,B_f->type)==0){
+							return 0;
+						};
+						A_f=A_f->tail;
+						B_f=B_f->tail;
+						;
+					}
+					return 1;
+					break;
+				}
+				case FUNCTION:{
+					//To be done;
+					//printf("FUNCTION check_type: To be done\n");
+					if(A->u.function.paramnums!=B->u.function.paramnums){
+						return 0;//函数参数个数不一样;
+					}
+					if(check_type(A->u.function.returnparam,B->u.function.returnparam)==0){
+						return 0;
+					}
+					FieldList A_f=A->u.function.params;
+					FieldList B_f=B->u.function.params;
+					int flag=0;
+					while(A_f!=NULL&&B_f!=NULL){
+						if(check_type(A_f->type,B_f->type)==0){
+							return 0;
+						};
+						A_f=A_f->tail;
+						B_f=B_f->tail;						
+					}
+					return 1;
+					break;
+				}
+				default:
+					printf("check_type bug,A->kind cant't find!\n");assert(0);return 0;
+			}
 
+		}
+	}
 
 	return 0;
 }

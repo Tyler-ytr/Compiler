@@ -59,6 +59,7 @@ int Program_s(struct Node* cur){
 	//printf("In program_s\n\n");
 	struct Node* ExtDefListnode=getchild(cur,0);
 	ExtDefList_s(ExtDefListnode);
+	show_global_table();
 	return 0;
 }
 int ExtDefList_s(struct Node* cur){
@@ -103,8 +104,20 @@ ExtDef -> Specifier ExtDecList SEMI
 				printf("ExtDef_s bug!Should be FuncDec!\n");
 				assert(0);
 			}
+			struct Node*	FunDecnode=tempnode1;
 			
-			printf("should be func:%s\n",tempnode1->name);
+		//	printf("should be func:%s\n",tempnode1->name);
+			if(strcmp(tempnode2->name,"SEMI")==0){
+				printf("Specifier Fundec SEMI;\n");
+				struct Symbol_bucket* tempscope=enter_scope();
+				FunDec_s(FunDecnode,0,nodetype,tempscope);//声明;
+				exit_scope();
+
+			}else{
+				printf("Specifier Fundec Compst;\n");
+				struct Symbol_bucket* tempscope=enter_scope();
+				FunDec_s(FunDecnode,1,nodetype,tempscope);
+			}
 			//Specifier FunDec SEMI
 			
 		}
@@ -113,6 +126,139 @@ ExtDef -> Specifier ExtDecList SEMI
 	// if(name!=NULL)
 	// printf("%s\n\n\n\n\n",name);
 	return 0;
+}
+void FunDec_s(struct Node*cur,const int ifdef,const Type res_type,struct Symbol_bucket* scope){
+/*	FunDec -> ID LP VarList RP
+| ID LP RP
+	*/
+	//如果之前没有定义/声明过,就插入声明,否则不插入;并且声明只插入一次
+	Type query_type=NULL;
+	int query_ifdef;
+	struct Node*IDnode=getchild(cur,0);
+	if(strcmp(IDnode->name,"ID")!=0){
+		printf("FunDec_s error: should be ID but %s",IDnode->name);
+		assert(0);
+	}
+	char*funcname=IDnode->string_contant;
+	int result=query_symbol(&query_type,funcname,&query_ifdef,depth_);
+	int flag=0;//0的时候都可以填表,1的时候只有定义可以填表;
+
+	//处理VarList
+	//先处理好type,然后和查到的比较,然后考虑插不插入;
+	struct Node*tempnode=getchild(cur,2);
+	Type functiontype=(Type)(malloc(sizeof(struct Type_)));
+	FieldList params=NULL;
+	if(strcmp(tempnode->name,"VarList")!=0){
+		functiontype->u.function.paramnums=0;
+		functiontype->u.function.params=NULL;
+	}else{
+		//处理VarList
+		//FieldList params=NULL;
+		printf("should be varlist:%s\n",tempnode->name);
+		struct Node*Varlistnode=tempnode;
+		depth_+=1;//VarList 是局部作用域;
+		params=VarList_s(Varlistnode,scope);
+		depth_-=1;
+		int cnt=0;
+		FieldList temp=params;
+		while(temp!=NULL){
+			cnt+=1;
+			temp=temp->tail;
+		}
+	//	printf("cnt:%d\n",cnt);
+		functiontype->u.function.paramnums=cnt;
+		functiontype->u.function.params=params;		
+	}
+	functiontype->kind=FUNCTION;
+	functiontype->u.function.returnparam=res_type;
+	//然后进行检查;
+	if(result==0){
+		flag=1;//找到一次了,当且仅当定义的时候可以填表;
+		if(ifdef==1){
+			if(query_ifdef==1){
+				error_s(4,cur->column,IDnode->name,NULL);//重复定义;
+				flag=2;
+			}else if(check_type(query_type,functiontype)==0){
+						error_s(19,cur->column,IDnode->name,NULL);//定义和声明type不同报错;
+						flag=3;	
+			}else{//定义,没有重复定义,不和前面的冲突,填表!
+			//	printf("herere\n\n\n\n\n");
+				struct Symbol_node*insert_node=create_symbolnode(FUNCTION_NAME,functiontype,funcname,ifdef,depth_);
+				insert_symbol2(insert_node,global_scope);
+			}
+		}else{//找到的是声明;
+					if(check_type(query_type,functiontype)==0){
+						error_s(19,cur->column,IDnode->name,NULL);//type不同报错;
+						flag=4;
+				}
+		}
+	}else{
+		//没有找到,填;
+		struct Symbol_node*insert_node=create_symbolnode(FUNCTION_NAME,functiontype,funcname,ifdef,depth_);
+		insert_symbol2(insert_node,global_scope);	
+		//如果是声明的话,加入到function_dec链表中;
+		if(ifdef==0){
+			push_function_dec(funcname);
+		}
+
+	}
+	//如果是定义的话,没有重复定义就插入hash表;
+	//如果是声明的话,如果之前没有声明/定义过就插入hash表;因此全局变量中,和函数同名的找到的第一个要么是定义,要么是没有定义过的声明;
+	//声明的函数插入声明链表用于最后的查找;
+	
+
+
+	// struct Symbol_node*insert_node=create_symbolnode(FUNCTION_NAME,functiontype,funcname,ifdef,depth_);
+
+	;
+}
+FieldList VarList_s(struct Node* cur,struct Symbol_bucket*scope){
+	/*VarList -> ParamDec COMMA VarList
+| ParamDec;*/
+	//需要注册;
+	printf("in VarList\n");
+	struct Node*paramdecnode=getchild(cur,0);
+	FieldList result=ParamDec_s(paramdecnode);
+	struct Symbol_node *insert_node=create_symbolnode(VARIABLE,result->type,result->name,1,depth_);
+	insert_symbol2(insert_node,scope);
+	//result->tail=NULL;
+	FieldList temp=result;
+	struct Node*tempnode=cur;
+	//这是第一个,然后把它们串起来;
+	while(1){
+		if(getchild(tempnode,1)==NULL){
+			break;
+		}
+		tempnode=getchild(tempnode,2);
+		struct Node*tempparam=getchild(tempnode,0);
+		FieldList tempfield=ParamDec_s(tempparam);
+		insert_node=create_symbolnode(VARIABLE,tempfield->type,tempfield->name,1,depth_);
+		insert_symbol2(insert_node,scope);
+		//往局部作用域里面插入元素;
+		temp->tail=tempfield;
+		temp=temp->tail;
+	}
+	temp->tail=NULL;
+	/*test
+	temp=result;
+	while(temp!=NULL){
+		printf("test: %d \n",temp->type->kind);
+		temp=temp->tail;
+	}*/
+
+
+	return result;
+}
+FieldList ParamDec_s(struct Node*cur){
+	/*ParamDec -> Specifier VarDec*/
+	printf("ParamDec:");
+	struct Node*Specifiernode=getchild(cur,0);
+	struct Node*Vardecnode=getchild(cur,1);
+	Type nodetype=Specifier_s(Specifiernode);
+	FieldList result=VarDec_s(Vardecnode,nodetype);
+	printf("%s\n",result->name);
+	return result;
+
 }
 
 Type Specifier_s(struct Node*cur){
@@ -165,7 +311,7 @@ Type Specifier_s(struct Node*cur){
 			else if(strcmp(tempnode2->name,"ID")==0){
 				char*struct_name=tempnode2->string_contant;
 			//	printf("struct name:%s\n",struct_name);
-				if(query_symbol_name(struct_name)==0){
+				if(query_symbol_name(struct_name,depth_)==0){
 					error_s(16,tempnode2->column,struct_name,NULL);
 					return NULL;
 				}else{
@@ -251,7 +397,7 @@ Type Specifier_s(struct Node*cur){
 			char*tempname=ID_node->string_contant;
 			Type temptype=NULL;
 			int tempdef;
-			int tempreuslt=query_symbol(&temptype,tempname,&tempdef);
+			int tempreuslt=query_symbol(&temptype,tempname,&tempdef,depth_);
 			//printf("out of query:%d\n",tempreuslt);
 			if(tempreuslt!=0){
 		//		printf("tempresult:1\n");
@@ -325,10 +471,6 @@ Type Specifier_s(struct Node*cur){
 					// }
 					}
 					
-
-
-
-
 		}
 		else{	
 			printf("In Specifier Neither OptTag nor Tag :%s!\n",tempnode1->name);
@@ -536,7 +678,7 @@ int ExtDecList(struct Node *cur,Type type){
 	struct Node* VarDecnode=getchild(cur,0);
 	FieldList vardec1=VarDec_s(VarDecnode,type);
 	printf("name:%s\n",vardec1->name);
-	if(query_symbol_name(vardec1->name)==0){
+	if(query_symbol_name(vardec1->name,depth_)==0){
 		error_s(3,cur->column,vardec1->name,NULL);
 	}
 

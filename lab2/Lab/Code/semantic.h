@@ -18,4 +18,8 @@ FieldList Dec_struct(struct Node*cur,Type type);
 char* safe_strcpy(char*des,char*source);
 void error_s(int type,int column,char* content,char*content2);
 char* safe_strcpy(char*des,char*source);//32位以内的strcpy,char a[31]='\0'
+void FunDec_s(struct Node*cur,const int ifdef,const Type res_type,struct Symbol_bucket*scope);//节点,是否是声明,返回值类型;
+FieldList VarList_s(struct Node*cur,struct Symbol_bucket*scope);
+FieldList ParamDec_s(struct Node*cur);
+
 #endif
