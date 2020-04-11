@@ -117,6 +117,11 @@ ExtDef -> Specifier ExtDecList SEMI
 				printf("Specifier Fundec Compst;\n");
 				struct Symbol_bucket* tempscope=enter_scope();
 				FunDec_s(FunDecnode,1,nodetype,tempscope);
+				struct Node*compstnode=tempnode2;
+				depth_+=1;
+				CompSt_s(compstnode,tempscope);
+				depth_-=1;
+
 			}
 			//Specifier FunDec SEMI
 			
@@ -127,6 +132,145 @@ ExtDef -> Specifier ExtDecList SEMI
 	// printf("%s\n\n\n\n\n",name);
 	return 0;
 }
+int CompSt_s(struct Node*cur,struct Symbol_bucket*scope){
+	printf("In Compst:%s\n\n",cur->name);
+	/*CompSt -> LC DefList StmtList RC
+		DefList -> Def DefList
+		| 空
+	*/
+	/*StmtList -> Stmt StmtList
+| 空*/
+	struct Node* tempnode=getchild(cur,1);
+//	printf("should be deflist:%s\n",tempnode->name);
+	if(strcmp(tempnode->name,"DefList")==0){
+		DefList_s(tempnode,scope);
+		struct Node* stmtlistnode=getchild(cur,2);
+	}else if(strcmp(tempnode->name,"StmtList")==0){
+		;
+	}
+//	struct Node* stmtlistnode=getchild(cur,2);
+//	DefList_s(deflistnode,scope);
+
+
+	return 0;
+}
+int DefList_s(struct Node*cur,struct Symbol_bucket*scope){
+/*	DefList -> Def DefList
+| 空 注意为空的时候使def ---> 空而不是 Deflist-->空
+Def -> Specifier DecList SEMI*/
+	printf("In deflist:%s\n",cur->name);
+	struct Node*tempnode=getchild(cur,0);
+	if(tempnode!=NULL){
+		struct Node*defnode=tempnode;
+		printf("temp: %s\n",tempnode->name);
+		struct Node*deflistnode=getchild(cur,1);
+
+		Def_s(defnode,scope);
+		if(deflistnode!=NULL)
+		DefList_s(deflistnode,scope);
+	}
+	return 0;
+}
+int Def_s(struct Node*cur,struct Symbol_bucket*scope){
+	printf("in def:%s\n",cur->name);
+/*	Def -> Specifier DecList SEMI*/
+/*
+DecList -> Dec
+| Dec COMMA DecList*/
+	struct Node*specifiernode=getchild(cur,0);
+	printf("in def1\n");
+	struct Node*declistnode=getchild(cur,1);
+	//printf("in def2\n");
+	Type type=Specifier_s(specifiernode);
+	printf("in def3\n");
+	DecList_s(declistnode,scope,type);
+	// printf("in def4\n");
+	return 0;
+}
+int DecList_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
+	/*
+	DecList -> Dec
+| Dec COMMA DecList
+	Dec -> VarDec
+| VarDec ASSIGNOP Exp*/
+	printf("In declist_s:%s\n",cur->name);
+	struct Node*decnode=getchild(cur,0);
+	Dec_s(decnode,scope,type);
+	struct Node*tempnode=getchild(cur,1);
+	if(tempnode!=NULL){
+		struct Node*declistnode=getchild(cur,2);
+		if(declistnode!=NULL)
+		DecList_s(declistnode,scope,type);
+	}
+
+	return 0;
+}
+int Dec_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
+		/*Dec -> VarDec
+| VarDec ASSIGNOP Exp*/
+	printf("In dec_s:%s\n",cur->name);
+	struct Node*vardecnode=getchild(cur,0);
+	FieldList tempfield=VarDec_s(vardecnode,type);
+	//printf("here\n");
+	struct Node*tempnode=getchild(cur,1);
+	if(tempnode==NULL){
+		int result=query_symbol_name(tempfield->name,depth_);
+		if(result==0){
+			;//重复了报错;
+			error_s(3,cur->column,tempfield->name,NULL);
+		}else{
+			//插入！
+			struct Symbol_node*insert_node=create_symbolnode(VARIABLE,tempfield->type,tempfield->name,1,depth_);
+			insert_symbol2(insert_node,scope);
+		}
+	}else{
+		//| VarDec ASSIGNOP Exp*/
+		struct Node*expnode=getchild(cur,2);
+		//Type exp_type=Exp_s(expnode);
+
+
+	}
+	
+	;
+}
+Type Exp_s(struct Node*cur){
+	/*Exp -> Exp ASSIGNOP Exp3
+	| Exp AND Exp3
+	| Exp OR Exp3
+	| Exp RELOP Exp3
+	| Exp PLUS Exp3
+	| Exp MINUS Exp3
+	| Exp STAR Exp3
+	| Exp DIV Exp3
+	| LP Exp RP3
+	| MINUS Exp3
+	| NOT Exp2
+	| ID LP Args RP4
+	| ID LP RP3
+	| Exp LB Exp RB4
+	| Exp DOT ID3
+	| ID1
+	| INT1
+	| FLOAT1
+	*/
+	Type result=(Type)(malloc(sizeof(struct Type_)));
+	struct Node*tempnode1=getchild(cur,0);
+	struct Node*tempnode2=getchild(cur,1);
+	if(tempnode2!=NULL){
+		if(strcmp(tempnode1->name,"ID")){
+			;
+		}else if(strcmp(tempnode1->name,"INT")){
+			;
+		}else if(strcmp(tempnode1->name,"FLOAT")){
+			;
+		}
+		;
+	}else{
+		;
+	}
+	
+}
+
 void FunDec_s(struct Node*cur,const int ifdef,const Type res_type,struct Symbol_bucket* scope){
 /*	FunDec -> ID LP VarList RP
 | ID LP RP
@@ -571,10 +715,6 @@ FieldList Def_struct(struct Node*cur,char* struct_name){
 				temp2=temp2->tail;
 			}
 			return result;
-
-
-
-
 
 	
 }
