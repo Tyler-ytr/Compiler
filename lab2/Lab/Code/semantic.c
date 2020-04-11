@@ -13,9 +13,23 @@ ExtDecList -> VarDec
 
 */
 
+
 int depth_=0;
 int struct_no_name_cnt=0;
 struct Symbol_bucket* global_scope=NULL;
+struct Symbol_node* create_symbolnode(int kind,Type type,char*name,int ifdef,int depth)
+{
+	struct Symbol_node *insert_node=(struct Symbol_node *)malloc(sizeof(struct Symbol_node));
+	insert_node->lnext=NULL;
+	insert_node->cnext=NULL;
+	insert_node->kind=kind;
+	insert_node->field.type=type;
+	strcpy(insert_node->field.name,name);
+	insert_node->depth=depth;
+	insert_node->ifdef=ifdef;
+	return insert_node;
+;
+}
 struct Node* getchild(struct Node* cur,int depth){
 	struct Node*temp=cur;
 	temp=temp->child;
@@ -221,7 +235,10 @@ Type Specifier_s(struct Node*cur){
 					}
 					
 				}
-				insert_symbol(type,struct_name,1,depth_);//不允许结构体和变量重名;
+
+				struct Symbol_node *insert_node=create_symbolnode(STRUCT_NAME,type,struct_name,1,depth_);
+				insert_symbol2(insert_node,global_scope);
+				//insert_symbol(type,struct_name,1,depth_);//不允许结构体和变量重名;
 			}
 			
 			;
@@ -522,7 +539,10 @@ int ExtDecList(struct Node *cur,Type type){
 	if(query_symbol_name(vardec1->name)==0){
 		error_s(3,cur->column,vardec1->name,NULL);
 	}
-	insert_symbol(type,vardec1->name,1,depth_);
+
+	struct Symbol_node *insert_node=create_symbolnode(VARIABLE,type,vardec1->name,1,depth_);
+	insert_symbol2(insert_node,global_scope);
+//	insert_symbol(type,vardec1->name,1,depth_);
 
 	struct Node*tempnode=getchild(cur,1);
 	if(tempnode==NULL){
