@@ -60,7 +60,7 @@ int Program_s(struct Node* cur){
 	struct Node* ExtDefListnode=getchild(cur,0);
 	ExtDefList_s(ExtDefListnode);
 	check_function_def();
-//	show_global_table();
+	show_global_table();
 	return 0;
 }
 int ExtDefList_s(struct Node* cur){
@@ -115,7 +115,7 @@ ExtDef -> Specifier ExtDecList SEMI
 				exit_scope();
 
 			}else{
-		//		printf("Specifier Fundec Compst;\n");
+				printf("Specifier Fundec Compst;\n");
 				struct Symbol_bucket* tempscope=enter_scope();
 				FunDec_s(FunDecnode,1,nodetype,tempscope);
 				struct Node*compstnode=tempnode2;
@@ -143,7 +143,7 @@ int CompSt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 	/*StmtList -> Stmt StmtList
 | 空*/
 	struct Node* tempnode=getchild(cur,1);
-//	printf("should be deflist:%s\n",tempnode->name);
+//printf("should be deflist:%s\n",tempnode->name);
 	if(strcmp(tempnode->name,"DefList")==0){
 		DefList_s(tempnode,scope);
 		struct Node* stmtlistnode=getchild(cur,2);
@@ -276,7 +276,7 @@ int DefList_s(struct Node*cur,struct Symbol_bucket*scope){
 /*	DefList -> Def DefList
 | 空 注意为空的时候使def ---> 空而不是 Deflist-->空
 Def -> Specifier DecList SEMI*/
-//	printf("In deflist:%s\n",cur->name);
+	printf("In deflist:%s\n",cur->name);
 	struct Node*tempnode=getchild(cur,0);
 	if(tempnode!=NULL){
 		struct Node*defnode=tempnode;
@@ -617,7 +617,10 @@ Type Exp_s(struct Node*cur){
 					if(type1==NULL||type3==NULL){
 						return NULL;
 					}
+					int checkresult=check_type(type1,type3);
+					
 					if(type1->kind!=ARRAY){
+						printf("type:%d,name:%s",type1->kind,tempnode1->child->string_contant);
 						error_s(10,cur->column,NULL,NULL);
 						return NULL;
 					}else{
@@ -1149,7 +1152,7 @@ FieldList VarDec_s(struct Node*cur,Type type){
 	/*	VarDec -> ID
 	| VarDec LB INT RB
 	*/
-	//	printf("In vardec\n");
+	printf("In vardec:%d\n",type->kind);
 	struct Node* tempnode=getchild(cur,0);
 	if(strcmp(tempnode->name,"ID")==0){
 		//printf("Vardec :%s\n",tempnode->string_contant);
@@ -1181,8 +1184,10 @@ FieldList VarDec_s(struct Node*cur,Type type){
 				printf("Vardecbug! INT error\n");
 				assert(0);
 			}
+			printf("name:%s\n",field->name);
 			cur_type->kind=ARRAY;
 			cur_type->u.array_.size=INT_node->int_contant;
+			
 			if(temp_type==NULL){//对应2;
 				cur_type->u.array_.elem=type;
 				temp_type=cur_type;//第二步:3->temptype(2)
@@ -1190,6 +1195,7 @@ FieldList VarDec_s(struct Node*cur,Type type){
 				cur_type->u.array_.elem=temp_type;
 				temp_type=cur_type;
 			}
+			printf("type:%d contant:%d\n",temp_type->kind,temp_type->u.array_.size); 
 			tempnode=tempnode->child;
 			if(tempnode==NULL){break;}
 
@@ -1198,7 +1204,13 @@ FieldList VarDec_s(struct Node*cur,Type type){
 			printf("Vardec bug!! check the while!\n");
 			assert(0);
 		}
+		Type t1=temp_type->u.array_.elem;
+		while(t1!=NULL){
+			printf("t1:%d\n",t1->kind);
+			t1=t1->u.array_.elem;
+		}
 		field->type=temp_type;
+		printf("name:%s type:%d\n",field->name,field->type->kind);
 
 		return field;//可以优化 记得debug;
 

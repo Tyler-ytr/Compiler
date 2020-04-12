@@ -188,7 +188,7 @@ void show_global_table(){
 			printf("i:%d ",i);
 			struct Symbol_node*temp=global_head[i].head;
 			while(temp!=NULL){
-					printf("%s ,",temp->field.name);
+					printf("name:%s type:%d ,",temp->field.name,temp->field.type->kind);
 					temp=temp->lnext;
 			}
 			printf("\n");
