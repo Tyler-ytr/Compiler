@@ -27,7 +27,7 @@ yyparse();
 //printf("%s\n",root->name);
 if(lexError==0&&syntaxError==0){
 //  printf("l: %d,\ts:%d\n",lexError,syntaxError);
-tree_search(root,0);
+//tree_search(root,0);
 semantic_check(root);
 }
 return 0;

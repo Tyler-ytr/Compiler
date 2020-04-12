@@ -98,7 +98,7 @@ struct Symbol_bucket*enter_scope(){
 }
 struct Symbol_bucket* exit_scope(){
 	;//To be done; 主要要做一个十字链表的插入和删除;
-	printf("exit scope\n");
+	//printf("exit scope\n");
 	struct Symbol_bucket*tail=scope_head;
 	struct Symbol_bucket* tailbefore=scope_head;
 	while(tail->next!=NULL){
@@ -110,7 +110,7 @@ struct Symbol_bucket* exit_scope(){
 		printf("Can't exit scope_head\n");
 		assert(0);
 	}else if(tail->head!=NULL){
-			printf("herer\n");
+			//printf("herer\n");
 
 			struct Symbol_node* scope_tail=tail->head;//目的是这个纵向链表的尾部
 			struct Symbol_node* scope_tail_before=scope_tail;//目的是这个纵向链表的尾部的前一个;
@@ -245,7 +245,7 @@ int insert_symbol(Type type,char* name,int ifdef,int depth){
 int insert_symbol2(struct Symbol_node*p,struct Symbol_bucket* scope){
 	
 	char *symbol_name=p->field.name;
-	printf("in insert2:%s\n",symbol_name);
+//	printf("in insert2:%s\n",symbol_name);
 	if(p->cnext!=NULL||p->lnext!=NULL){
 		printf("p->cnext/lnext should be NULL!\n");
 		assert(0);
@@ -285,7 +285,7 @@ int insert_symbol2(struct Symbol_node*p,struct Symbol_bucket* scope){
 
 int insert_struct(Type type,char*name){
 	int value=hash_name(name);
-	printf("in insert struct\n");
+	//printf("in insert struct\n");
 	if(struct_head[value].head==NULL){
 		struct Symbol_node*temp=malloc(sizeof(struct Symbol_node));
 		temp->field.type=type;
@@ -299,7 +299,7 @@ int insert_struct(Type type,char*name){
 		//结构体不允许重名;
 		struct Symbol_node*head=struct_head[value].head;
 		if(strcmp(head->field.name,name)==0){
-			printf("In insert_struct redifined struct\n");
+			//printf("In insert_struct redifined struct\n");
 			return -1;
 		}
 		else{
@@ -316,7 +316,7 @@ int insert_struct(Type type,char*name){
 
 int query_struct(Type*type,char*name){//存在 return 0,不存在return -1
 	int value=hash_name(name);
-	printf("In struct query\n");
+//	printf("In struct query\n");
 	if(struct_head[value].head==NULL){
 		return -1;//不存在
 	}
@@ -353,7 +353,7 @@ int query_symbol_name(char*name,int depth){
 }
 int query_symbol(Type* type,char*name,int*ifdef,int depth){//存在 return 0,不存在return -1
 	int value=hash_name(name);
-	printf("In query%s\n",name);
+//	printf("In query%s\n",name);
 	if(global_head[value].head==NULL){
 	//	printf("OMG!!!!!!!We don't have this symbol!!");
 		return -1;//没有命名,
@@ -385,7 +385,7 @@ int query_symbol(Type* type,char*name,int*ifdef,int depth){//存在 return 0,不
 }
 int query_symbol_exist(Type* type,char*name,int*ifdef,int depth){
 		int value=hash_name(name);
-	printf("In query%s\n",name);
+//	printf("In query%s\n",name);
 	if(global_head[value].head==NULL){
 	//	printf("OMG!!!!!!!We don't have this symbol!!");
 		return -1;//没有命名,
@@ -400,9 +400,9 @@ int query_symbol_exist(Type* type,char*name,int*ifdef,int depth){
 			if(strcmp(temp->field.name,name)==0&&depth>=temp->depth){//进入一个局部作用域之后depth+=1,因此当要找的depth小于depth的时候说明该层的前一层有;
 			//	printf("able:%d\n",temp->type->kind);
 				*type=temp->field.type;
-				if(temp->field.type==NULL){
-					printf("GG\n");
-				}
+				// if(temp->field.type==NULL){
+				// 	printf("GG\n");
+				// }
 				*ifdef=temp->ifdef;
 				flag=1;
 				return 0;

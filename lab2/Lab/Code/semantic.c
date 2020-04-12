@@ -60,7 +60,7 @@ int Program_s(struct Node* cur){
 	struct Node* ExtDefListnode=getchild(cur,0);
 	ExtDefList_s(ExtDefListnode);
 	check_function_def();
-	show_global_table();
+//	show_global_table();
 	return 0;
 }
 int ExtDefList_s(struct Node* cur){
@@ -81,7 +81,7 @@ ExtDef -> Specifier ExtDecList SEMI
 | Specifier FunDec CompSt
 |Specifier FunDec SEMI//新增;用于2.1
 */
-	printf("In ExtDef_s\n");
+	//printf("In ExtDef_s\n");
 	//char* name=NULL;在ExtDecList和FuncDec里面存
 	Type nodetype=NULL;
 	
@@ -109,13 +109,13 @@ ExtDef -> Specifier ExtDecList SEMI
 			
 		//	printf("should be func:%s\n",tempnode1->name);
 			if(strcmp(tempnode2->name,"SEMI")==0){
-				printf("Specifier Fundec SEMI;\n");
+		//		printf("Specifier Fundec SEMI;\n");
 				struct Symbol_bucket* tempscope=enter_scope();
 				FunDec_s(FunDecnode,0,nodetype,tempscope);//声明;
 				exit_scope();
 
 			}else{
-				printf("Specifier Fundec Compst;\n");
+		//		printf("Specifier Fundec Compst;\n");
 				struct Symbol_bucket* tempscope=enter_scope();
 				FunDec_s(FunDecnode,1,nodetype,tempscope);
 				struct Node*compstnode=tempnode2;
@@ -135,7 +135,7 @@ ExtDef -> Specifier ExtDecList SEMI
 	return 0;
 }
 int CompSt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
-	printf("In Compst:%s\n\n",cur->name);
+//	printf("In Compst:%s\n\n",cur->name);
 	/*CompSt -> LC DefList StmtList RC
 		DefList -> Def DefList
 		| 空
@@ -171,7 +171,7 @@ int StmtList_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 	| IF LP Exp RP Stmt ELSE Stmt
 	| WHILE LP Exp RP Stmt
 	*/
-	printf("In StmtList_s\n");
+//	printf("In StmtList_s\n");
 	struct Node*Stmtnode=getchild(cur,0);
 	struct Node*tempnode=getchild(cur,1);
 	Stmt_s(Stmtnode,scope,res_type);
@@ -189,7 +189,7 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 	| IF LP Exp RP Stmt ELSE Stmt
 	| WHILE LP Exp RP Stmt
 	*/
-	printf("In Stmt_s\n");
+//	printf("In Stmt_s\n");
 	struct Node* tempnode1=getchild(cur,0);
 	if(strcmp(tempnode1->name,"CompSt")==0){
 		depth_+=1;
@@ -216,7 +216,7 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 		}		
 
 	}else if(strcmp(tempnode1->name,"WHILE")==0){
-		printf("In Stmt_s WHILE\n");
+	//	printf("In Stmt_s WHILE\n");
 		struct Node* expnode=getchild(cur,2);
 		struct Node* stmtnode=getchild(cur,4);
 		Type type=Exp_s(expnode);
@@ -276,11 +276,11 @@ int DefList_s(struct Node*cur,struct Symbol_bucket*scope){
 /*	DefList -> Def DefList
 | 空 注意为空的时候使def ---> 空而不是 Deflist-->空
 Def -> Specifier DecList SEMI*/
-	printf("In deflist:%s\n",cur->name);
+//	printf("In deflist:%s\n",cur->name);
 	struct Node*tempnode=getchild(cur,0);
 	if(tempnode!=NULL){
 		struct Node*defnode=tempnode;
-		printf("temp: %s\n",tempnode->name);
+	//	printf("temp: %s\n",tempnode->name);
 		struct Node*deflistnode=getchild(cur,1);
 
 		Def_s(defnode,scope);
@@ -290,18 +290,18 @@ Def -> Specifier DecList SEMI*/
 	return 0;
 }
 int Def_s(struct Node*cur,struct Symbol_bucket*scope){
-	printf("in def:%s\n",cur->name);
+//	printf("in def:%s\n",cur->name);
 /*	Def -> Specifier DecList SEMI*/
 /*
 DecList -> Dec
 | Dec COMMA DecList*/
 	struct Node*specifiernode=getchild(cur,0);
-	printf("in def1\n");
+//	printf("in def1\n");
 	struct Node*declistnode=getchild(cur,1);
 	//printf("in def2\n");
 	Type type=Specifier_s(specifiernode);
-	if(type==NULL)
-	printf("in def3\n");
+	// if(type==NULL)
+	// printf("in def3\n");
 	DecList_s(declistnode,scope,type);
 	// printf("in def4\n");
 	return 0;
@@ -312,7 +312,7 @@ int DecList_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
 | Dec COMMA DecList
 	Dec -> VarDec
 | VarDec ASSIGNOP Exp*/
-	printf("In declist_s:%s\n",cur->name);
+//	printf("In declist_s:%s\n",cur->name);
 	struct Node*decnode=getchild(cur,0);
 	Dec_s(decnode,scope,type);
 	struct Node*tempnode=getchild(cur,1);
@@ -327,7 +327,7 @@ int DecList_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
 int Dec_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
 		/*Dec -> VarDec
 | VarDec ASSIGNOP Exp*/
-	printf("In dec_s:%s\n",cur->name);
+	//printf("In dec_s:%s\n",cur->name);
 	struct Node*vardecnode=getchild(cur,0);
 	FieldList tempfield=VarDec_s(vardecnode,type);
 	//printf("here\n");
@@ -395,7 +395,7 @@ Type Exp_s(struct Node*cur){
 	| INT1 ok
 	| FLOAT1 ok
 	*/
-	printf("In Exp\n");
+//	printf("In Exp\n");
 	Type result=NULL;
 	struct Node*tempnode1=getchild(cur,0);
 	struct Node*tempnode2=getchild(cur,1);
@@ -424,7 +424,7 @@ Type Exp_s(struct Node*cur){
 						if(strcmp(tempnode11->name,"Exp")==0&&strcmp(tempnode12->name,"LB")==0&&strcmp(tempnode13->name,"Exp")==0&&strcmp(tempnode14->name,"RB")==0){
 							;//这个是左值,okkkkk!
 						}else{
-							printf("maybegg:%s\n",tempnode14->name);
+						//	printf("maybegg:%s\n",tempnode14->name);
 							error_s(6,cur->column,NULL,NULL);
 							return NULL;
 						}
@@ -440,20 +440,20 @@ Type Exp_s(struct Node*cur){
 
 	if(tempnode2==NULL){ //一元
 		if(strcmp(tempnode1->name,"ID")==0){
-			printf("here1:%s\n\n",tempnode1->string_contant);
+		//	printf("here1:%s\n\n",tempnode1->string_contant);
 			Type querytype0=(Type)(malloc(sizeof(struct Type_)));
 			int queryifdef0;
 			int result_local=query_symbol(&querytype0,tempnode1->string_contant,&queryifdef0,depth_);//当前层;
 			Type querytype1=(Type)(malloc(sizeof(struct Type_)));
 			int queryifdef1;
 			int result_global=query_symbol_exist(&querytype1,tempnode1->string_contant,&queryifdef1,depth_);//所有层;
-			printf("result1:%d result2:%d\n",result_local,result_global);
-			printf("out;;\n");
+			// printf("result1:%d result2:%d\n",result_local,result_global);
+			// printf("out;;\n");
 			if(result_local==0){
 				;//当前层找到了用当前的;是普通变量,
 				result=querytype0;
-				if(querytype0==NULL)
-				printf("out;1;\n");
+				// if(querytype0==NULL)
+				// printf("out;1;\n");
 				return result;
 			}else{
 				;//查看全局层,如果没有就挂!
