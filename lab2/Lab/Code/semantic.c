@@ -60,7 +60,7 @@ int Program_s(struct Node* cur){
 	struct Node* ExtDefListnode=getchild(cur,0);
 	ExtDefList_s(ExtDefListnode);
 	check_function_def();
-	show_global_table();
+//	show_global_table();
 	return 0;
 }
 int ExtDefList_s(struct Node* cur){
@@ -115,7 +115,7 @@ ExtDef -> Specifier ExtDecList SEMI
 				exit_scope();
 
 			}else{
-				printf("Specifier Fundec Compst;\n");
+				//printf("Specifier Fundec Compst;\n");
 				struct Symbol_bucket* tempscope=enter_scope();
 				FunDec_s(FunDecnode,1,nodetype,tempscope);
 				struct Node*compstnode=tempnode2;
@@ -276,7 +276,7 @@ int DefList_s(struct Node*cur,struct Symbol_bucket*scope){
 /*	DefList -> Def DefList
 | 空 注意为空的时候使def ---> 空而不是 Deflist-->空
 Def -> Specifier DecList SEMI*/
-	printf("In deflist:%s\n",cur->name);
+	//printf("In deflist:%s\n",cur->name);
 	struct Node*tempnode=getchild(cur,0);
 	if(tempnode!=NULL){
 		struct Node*defnode=tempnode;
@@ -497,6 +497,8 @@ Type Exp_s(struct Node*cur){
 					
 					int tempresult=check_type(exp1type,exp2type);
 					if(tempresult==0&&0==strcmp(tempnode2->name,"ASSIGNOP")){
+						// To be fix!!!
+						//printf("type1:%d type2:%d",exp1type->u.array_.size,exp2type->u.array_.size);
 						error_s(5,cur->column,NULL,NULL);
 						return NULL;
 					}
@@ -620,7 +622,7 @@ Type Exp_s(struct Node*cur){
 					int checkresult=check_type(type1,type3);
 					
 					if(type1->kind!=ARRAY){
-						printf("type:%d,name:%s",type1->kind,tempnode1->child->string_contant);
+						//printf("type:%d,name:%s",type1->kind,tempnode1->child->string_contant);
 						error_s(10,cur->column,NULL,NULL);
 						return NULL;
 					}else{
@@ -631,7 +633,9 @@ Type Exp_s(struct Node*cur){
 							return NULL;
 						}
 					}
+				//	printf("hererer 1:%d\n",type1->u.array_.size);
 					result=type1->u.array_.elem;
+				//	printf("hererer 2:%d\n",result->u.array_.size);
 					return result;
 				}
 			}
@@ -1152,7 +1156,7 @@ FieldList VarDec_s(struct Node*cur,Type type){
 	/*	VarDec -> ID
 	| VarDec LB INT RB
 	*/
-	printf("In vardec:%d\n",type->kind);
+	//printf("In vardec:%d\n",type->kind);
 	struct Node* tempnode=getchild(cur,0);
 	if(strcmp(tempnode->name,"ID")==0){
 		//printf("Vardec :%s\n",tempnode->string_contant);
@@ -1163,9 +1167,15 @@ FieldList VarDec_s(struct Node*cur,Type type){
 	}else{
 		//递归;
 		//首先获得名字;
+		int cnt=0;
 		while(tempnode->child!=NULL){
 			tempnode=tempnode->child;
+			cnt+=1;
 		}
+	//	printf("cnt start:%d\n",cnt);
+		struct Type_** type_list=(struct Type_**)malloc(sizeof(struct Type_**)*(cnt+2));
+		
+
 		if(strcmp(tempnode->name,"ID")!=0){
 			printf("Vardec bug!! check the while!\n");
 			assert(0);
@@ -1175,42 +1185,73 @@ FieldList VarDec_s(struct Node*cur,Type type){
 		tempnode=getchild(cur,0);
 		//现在是数组;a[10][3][2] 访问顺序:2->3->10->ID;
 		//Type head=(Type)malloc(sizeof(struct Type_));
-		Type temp_type=NULL;
-		struct Node*INT_node=NULL;
+		struct Node*INT_node1=NULL;
+		Type temp_type1=NULL;
+		cnt-=1;
+		int max_cnt=cnt;
+	//	printf("hererer\n\n\n\n");
 		while(tempnode->child!=NULL){
 			Type cur_type=(Type)malloc(sizeof(struct Type_));
-			INT_node=tempnode->next_sib->next_sib;
-			if(strcmp(INT_node->name,"INT")!=0){
-				printf("Vardecbug! INT error\n");
-				assert(0);
-			}
-			printf("name:%s\n",field->name);
-			cur_type->kind=ARRAY;
-			cur_type->u.array_.size=INT_node->int_contant;
-			
-			if(temp_type==NULL){//对应2;
-				cur_type->u.array_.elem=type;
-				temp_type=cur_type;//第二步:3->temptype(2)
-			}else{
-				cur_type->u.array_.elem=temp_type;
-				temp_type=cur_type;
-			}
-			printf("type:%d contant:%d\n",temp_type->kind,temp_type->u.array_.size); 
-			tempnode=tempnode->child;
-			if(tempnode==NULL){break;}
+			INT_node1=tempnode->next_sib->next_sib;
+		//	printf("cnt:%d \n",cnt);
 
+			cur_type->kind=ARRAY;
+			cur_type->u.array_.size=INT_node1->int_contant;
+			type_list[cnt]=cur_type;
+			cnt-=1;
+			tempnode=tempnode->child;
 		}
-		if(strcmp(tempnode->name,"ID")!=0){
-			printf("Vardec bug!! check the while!\n");
-			assert(0);
+		temp_type1=type_list[0];
+		Type temp_type2=temp_type1;
+		type_list[max_cnt]->u.array_.elem=type;
+		for(int i=1;i<=max_cnt;i++){
+		//	printf("list:%d %d %d\n",i,type_list[i]->kind,type_list[i]->u.array_.size);
+			temp_type2->u.array_.elem=type_list[i];
+			temp_type2=temp_type2->u.array_.elem;
 		}
-		Type t1=temp_type->u.array_.elem;
-		while(t1!=NULL){
-			printf("t1:%d\n",t1->kind);
-			t1=t1->u.array_.elem;
-		}
-		field->type=temp_type;
-		printf("name:%s type:%d\n",field->name,field->type->kind);
+		
+
+		//printf("cnt now:%d \n",cnt);
+		field->type=temp_type1;
+
+		// tempnode=getchild(cur,0);
+		// Type temp_type=NULL;
+		// struct Node*INT_node=NULL;
+		// while(tempnode->child!=NULL){
+		// 	Type cur_type=(Type)malloc(sizeof(struct Type_));
+		// 	INT_node=tempnode->next_sib->next_sib;
+		// 	if(strcmp(INT_node->name,"INT")!=0){
+		// 		printf("Vardecbug! INT error\n");
+		// 		assert(0);
+		// 	}
+		// 	printf("name:%s\n",field->name);
+		// 	cur_type->kind=ARRAY;
+		// 	cur_type->u.array_.size=INT_node->int_contant;
+			
+		// 	if(temp_type==NULL){//对应2;
+		// 		cur_type->u.array_.elem=type;
+		// 		temp_type=cur_type;//第二步:3->temptype(2)
+		// 	}else{
+		// 		cur_type->u.array_.elem=temp_type;
+		// 		temp_type=cur_type;
+		// 	}
+		// 	printf("type:%d contant:%d\n",temp_type->kind,temp_type->u.array_.size); 
+		// 	tempnode=tempnode->child;
+		// 	if(tempnode==NULL){break;}
+
+		// }
+		// if(strcmp(tempnode->name,"ID")!=0){
+		// 	printf("Vardec bug!! check the while!\n");
+		// 	assert(0);
+		// }
+		// 下面的是测试,上面的是老版本有错;
+		// Type t1=temp_type1;
+		// while(t1!=NULL){
+		// 	printf("t1:%d %d\n",t1->kind,t1->u.array_.size);
+		// 	t1=t1->u.array_.elem;
+		// }
+	
+	//	printf("name:%s type:%d\n",field->name,field->type->kind);
 
 		return field;//可以优化 记得debug;
 
@@ -1234,8 +1275,8 @@ int ExtDecList(struct Node *cur,Type type){
 	if(query_symbol_name(vardec1->name,depth_)==0){//这个仅仅是全局变量,所以不需要用exist查
 		error_s(3,cur->column,vardec1->name,NULL);
 	}
-
-	struct Symbol_node *insert_node=create_symbolnode(VARIABLE,type,vardec1->name,1,depth_);
+	//printf("In ExtDecList:name:%s,kind:%d\n",vardec1->name,vardec1->type->kind);
+	struct Symbol_node *insert_node=create_symbolnode(VARIABLE,vardec1->type,vardec1->name,1,depth_);
 	insert_symbol2(insert_node,global_scope);
 //	insert_symbol(type,vardec1->name,1,depth_);
 

@@ -457,13 +457,29 @@ int check_type(Type A,Type B){
 					//printf("BASIC: A:%d B:%d \n",A->u.basic,B->u.basic);
 					return A->u.basic==B->u.basic;
 					break;}
-				case ARRAY:{
-					if(A->u.array_.size!=B->u.array_.size){
-						return 0;
+				case ARRAY:{//维度一样就行了;
+					// if(A->u.array_.size!=B->u.array_.size){
+					// 	return 0;
+					// }
+					// //否则size一样,比较type
+					// int result1=check_type(A->u.array_.elem,B->u.array_.elem);
+					// return result1;
+					//数组弱等价: 维度一样;
+					int result2=0;
+					int cnt1=0;int cnt2=0;
+					Type temp1=A;Type temp2=B;
+					while(temp1!=NULL){
+						temp1=temp1->u.array_.elem;
+						cnt1+=1;
 					}
-					//否则size一样,比较type
-					int result1=check_type(A->u.array_.elem,B->u.array_.elem);
-					return result1;
+					while(temp2!=NULL){
+						temp2=temp2->u.array_.elem;
+						cnt2+=1;
+					}
+				//	printf("cnt1:%d cnt2:%d \n",cnt1,cnt2);
+					result2=(cnt1==cnt2);
+
+					return result2;
 					break;}
 				case STRUCTURE:{
 					//神必报错:a label can only be part of a statement and a declaration is not a statement,加了一个大括号就好了;
