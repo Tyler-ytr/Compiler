@@ -120,7 +120,7 @@ struct Symbol_bucket* exit_scope(){
 			int tempcnt=cnt;
 			//首先找到这个symbol在table里面的前一项,然后横向删除,然后纵向删除;
 			for(;cnt>=0;cnt--){
-				printf("cnt:%d",cnt);
+		//		printf("cnt:%d",cnt);
 				int value=hash_name(scope_list[cnt]->field.name);
 				if(global_head[value].head==NULL){
 					printf("drop table bug, %s not found!\n",scope_list[cnt]->field.name);
@@ -367,6 +367,43 @@ int query_symbol(Type* type,char*name,int*ifdef,int depth){//存在 return 0,不
 		}
 	}
 }
+int query_symbol_exist(Type* type,char*name,int*ifdef,int depth){
+		int value=hash_name(name);
+	printf("In query%s\n",name);
+	if(global_head[value].head==NULL){
+	//	printf("OMG!!!!!!!We don't have this symbol!!");
+		return -1;//没有命名,
+	}else{
+		struct Symbol_node*temp=global_head[value].head;
+		// printf("herer");
+		// if(temp->lnext==NULL){
+		// 	printf("herer");
+		// }
+		int flag=0;
+		while(temp!=NULL){
+			if(strcmp(temp->field.name,name)==0&&depth>=temp->depth){//进入一个局部作用域之后depth+=1,因此当要找的depth小于depth的时候说明该层的前一层有;
+			//	printf("able:%d\n",temp->type->kind);
+				*type=temp->field.type;
+				*ifdef=temp->ifdef;
+				flag=1;
+				return 0;
+			}
+			temp=temp->lnext;
+			if(temp==NULL){
+				break;
+			}
+		}
+		if(flag==0){
+		//	printf("OMG2!!!!!!!We don't have this symbol!!");
+			return -1;//没有找到
+		}
+	}
+
+
+
+
+}
+
 
 
 int delete_symbol(Type type,char*name,int*ifdef){
@@ -397,17 +434,18 @@ int check_type(Type A,Type B){
 			// FieldList A_f=A->u.structure_.structure;
 			// FieldList B_f=B->u.structure_.structure;
 			switch (A->kind){
-				case BASIC:
+				case BASIC:{
+					//printf("BASIC: A:%d B:%d \n",A->u.basic,B->u.basic);
 					return A->u.basic==B->u.basic;
-					break;
-				case ARRAY:
+					break;}
+				case ARRAY:{
 					if(A->u.array_.size!=B->u.array_.size){
 						return 0;
 					}
 					//否则size一样,比较type
 					int result1=check_type(A->u.array_.elem,B->u.array_.elem);
 					return result1;
-					break;
+					break;}
 				case STRUCTURE:{
 					//神必报错:a label can only be part of a statement and a declaration is not a statement,加了一个大括号就好了;
 					FieldList A_f=A->u.structure_.structure;

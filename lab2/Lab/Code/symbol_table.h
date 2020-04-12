@@ -59,9 +59,10 @@ struct dec_func{
 
 int insert_symbol(Type type,char* name,int ifdef,int depth);
 int insert_symbol2(struct Symbol_node*p,struct Symbol_bucket* scope );//使用的时候p 的 lnext,cnext需要首先赋值NULL;
-int query_symbol(Type* type,char*name,int*ifdef,int depth);//给名字查type和ifdef;如果不存在返回-1,否则返回0
+int query_symbol(Type* type,char*name,int*ifdef,int depth);//给名字查type和ifdef;如果不存在返回-1,否则返回0;这里查的depth和里面的depth相等的时候才认为存在,因此相当于只是查当前作用域的;
+int query_symbol_exist(Type* type,char*name,int*ifdef,int depth);//给名字查type和ifdef;如果不存在返回-1,否则返回0;这里查的depth<=查到的时候认为存在,因此相当于查所有作用域的;
 int query_struct_name(char*name);//仅仅指查名字;
-int query_symbol_name(char*name,int depth);//仅仅指查名字,并且depth=0;
+int query_symbol_name(char*name,int depth);//仅仅指查名字,并且只查当前层;
 int query_struct(Type*type,char*name);//结构体域里面使用的;
 int insert_struct(Type type,char*name);
 struct Symbol_bucket* init_symboltable();

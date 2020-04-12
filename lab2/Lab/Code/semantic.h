@@ -19,12 +19,14 @@ char* safe_strcpy(char*des,char*source);
 void error_s(int type,int column,char* content,char*content2);
 char* safe_strcpy(char*des,char*source);//32位以内的strcpy,char a[31]='\0'
 void FunDec_s(struct Node*cur,const int ifdef,const Type res_type,struct Symbol_bucket*scope);//节点,是否是声明,返回值类型;
-int CompSt_s(struct Node*cur,struct Symbol_bucket*scope);
+int CompSt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type);
 FieldList VarList_s(struct Node*cur,struct Symbol_bucket*scope);
 FieldList ParamDec_s(struct Node*cur);
 int DefList_s(struct Node*cur,struct Symbol_bucket*scope);
 int Def_s(struct Node*cur,struct Symbol_bucket*scope);
 int DecList_s(struct Node*cur,struct Symbol_bucket*scope,Type type);
+int StmtList_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type);
+int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type);
 int Dec_s(struct Node*cur,struct Symbol_bucket*scope,Type type);
 Type Exp_s(struct Node*cur);//检查表达式得到type交给上层;
 #endif
