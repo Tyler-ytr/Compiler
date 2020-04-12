@@ -383,10 +383,11 @@ Type Exp_s(struct Node*cur){
 	| MINUS Exp 2 ok
 	| NOT Exp 2 ok
 
-	| ID LP Args RP4
-	| ID LP RP3
-	| Exp LB Exp RB4
-	| Exp DOT ID3
+	| ID LP Args RP 4函数
+	| ID LP RP 3
+
+	| Exp LB Exp RB4 数组
+	| Exp DOT ID3 结构体;
 
 	| ID1 ok
 	| INT1 ok
@@ -499,6 +500,7 @@ Type Exp_s(struct Node*cur){
 					}
 				}else{
 					;//如果是返回NULL的话exp里面肯定报错了,就不重复报错了;
+					return NULL;//把NULL往前传,因为有错;
 				}
 			}
 		}
@@ -514,14 +516,63 @@ Type Exp_s(struct Node*cur){
 			return result;
 		}
 		//第三部分;
-		printf("Exp to be done!\n");
-		assert(0);
+		/*
+		| ID LP Args RP 4函数
+		| ID LP RP 3
+
+		| Exp LB Exp RB4 数组
+		| Exp DOT ID3 结构体;
+		*/
+		//函数部分,因为此时不是一元的,只需要判断第一个是不是ID;需要检查这个函数的存在性,得到函数的params交给下一层检查,并且查看这个ID是不是函数类型
+		if(strcmp(tempnode1->name,"ID")==0){
+			if(strcmp(tempnode3->name,"Args")==0){
+				;
+			}else{
+				;
+			}
+			
+		}
+
 
 		;
 	}
+	printf("Exp bug! 漏网之鱼\n");
+	assert(0);
+	return NULL;//防止漏网之鱼;
 
 
 	
+}
+int Arg_s(struct Node*cur,struct Symbol_bucket*scope,FieldList params){
+	/*Args -> Exp COMMA Args
+	| Exp;
+	*/
+	struct Node*expnode=getchild(cur,0);
+	struct Node*tempnode=getchild(cur,1);
+	if(params==NULL){
+		error_s(9,cur->column,NULL,NULL);
+		return -1;
+	}
+	Type temptype=Exp_s(expnode);
+	if(temptype!=NULL){
+		if(params->type==NULL){
+			error_s(9,cur->column,NULL,NULL);;
+		}else{
+			int result=check_type(temptype,params->type);
+			if(result==0){
+				error_s(9,cur->column,NULL,NULL);
+			}
+		}
+	}	
+	if(tempnode!=NULL){
+		if(params->tail==NULL){
+			error_s(9,cur->column,NULL,NULL);
+		}else{
+			struct Node* argsnode=getchild(cur,2);
+			Arg_s(argsnode,scope,params->tail);
+		}
+	}
+	return 0;
 }
 
 void FunDec_s(struct Node*cur,const int ifdef,const Type res_type,struct Symbol_bucket* scope){
@@ -1125,7 +1176,7 @@ void error_s(int type,int column,char* content,char*content2){
 			printf("Type mismatched for return.\n");
 			break;
 		case 9:
-			printf("Function \"%s\" is not applicable for arguments \"%s\".\n",content,content2);
+			printf("Function is not applicable for arguments.\n");
 			break;
 		case 10:
 			printf("\"%s\" is not an array.\n",content);
