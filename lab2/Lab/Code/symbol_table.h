@@ -54,6 +54,7 @@ struct Symbol_bucket{
 };//全局符号表头;
 struct dec_func{
 	char name[32];
+	int column;
 	struct dec_func* next;
 };
 
@@ -74,8 +75,9 @@ struct Symbol_bucket *enter_scope();//进入作用域;返回一个函数头;
 struct Symbol_bucket* exit_scope();//出作用域,删除;返回尾部作用域;
 void show_global_table();
 void show_scope_table();
-void push_function_dec(char*name);
 
+void push_function_dec(char*name,int column);
+void check_function_def();
 
 
 

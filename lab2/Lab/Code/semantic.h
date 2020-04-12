@@ -28,6 +28,6 @@ int DecList_s(struct Node*cur,struct Symbol_bucket*scope,Type type);
 int StmtList_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type);
 int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type);
 int Dec_s(struct Node*cur,struct Symbol_bucket*scope,Type type);
-int Arg_s(struct Node* cur,struct Symbol_bucket*scope,FieldList params);
+int Arg_s(struct Node* cur,FieldList params);
 Type Exp_s(struct Node*cur);//检查表达式得到type交给上层;
 #endif

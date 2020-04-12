@@ -42,10 +42,11 @@ struct Symbol_bucket struct_head[SYMBOL_LEN];
 //struct Symbol_bucket* stack_head=NULL;//每进入一个大括号的时候往链表中插一个新的节点;
 struct Symbol_bucket* scope_head=NULL;//作用域控制链表;
 struct dec_func*dec_func_head=NULL;//函数定义链表,最后遍历检查;
-void push_function_dec(char*name){
+void push_function_dec(char*name,int column){
 	if(dec_func_head==NULL){
 		dec_func_head=(struct dec_func*)malloc(sizeof(struct dec_func));
 		strcpy(dec_func_head->name,name);
+		dec_func_head->column=column;
 		dec_func_head->next=NULL;
 	}else{
 		struct dec_func*temp=dec_func_head;
@@ -54,10 +55,25 @@ void push_function_dec(char*name){
 		}
 		temp->next=(struct dec_func*)malloc(sizeof(struct dec_func));
 		strcpy(temp->next->name,name);
+		temp->next->column=column;
 		temp->next->next=NULL;
 	}
 }
+void check_function_def(){
+	struct dec_func*temp=dec_func_head;
+	while(temp!=NULL){
+		char*name=temp->name;
+		int queryifdef=-1;
+		Type uselesstype=(Type)(malloc(sizeof(struct Type_)));
+		int result=query_symbol(&uselesstype,name,&queryifdef,0);
+		if(queryifdef!=1){
+			printf("Error type %d at Line %d: ", 18, temp->column);
+			printf("Undefined function \"%s\".\n",temp->name);
+		}
 
+		temp=temp->next;
+	}
+}
 struct Symbol_bucket* init_symboltable(){
 	//to be done
 	for(int i=0;i<SYMBOL_LEN;i++){
@@ -384,6 +400,9 @@ int query_symbol_exist(Type* type,char*name,int*ifdef,int depth){
 			if(strcmp(temp->field.name,name)==0&&depth>=temp->depth){//进入一个局部作用域之后depth+=1,因此当要找的depth小于depth的时候说明该层的前一层有;
 			//	printf("able:%d\n",temp->type->kind);
 				*type=temp->field.type;
+				if(temp->field.type==NULL){
+					printf("GG\n");
+				}
 				*ifdef=temp->ifdef;
 				flag=1;
 				return 0;
