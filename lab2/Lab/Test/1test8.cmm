@@ -1,0 +1,25 @@
+int temp(int a,float b){
+	a=1;
+	b=2.0;
+	return a;
+}
+int temp2(int c,int d);
+//int temp2(int c,float d){
+//	int i;
+//}
+int a1;
+int main(){
+	int a1=0;
+	int a=1;
+	//a1=a2;
+	float a2=0.0;
+	int c=temp(a1,a2);
+	int a3=a1;
+	float a4=1.0;
+	while(a4){
+		a=1;
+	}
+	
+	1=a1;
+	return 0;
+}

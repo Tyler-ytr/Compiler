@@ -1,0 +1,45 @@
+//struct test
+/*
+struct Position
+{
+float x;
+};
+
+
+struct Position
+{
+int y;
+};
+*/
+
+
+/*
+struct {
+int b;
+struct Position temp;
+};
+struct {
+int b;
+
+};
+struct able{
+};
+*/
+struct A{
+int here;
+int temp1[10][3][2];
+//struct Position temp;
+};
+int a;
+float b,c;
+int c2[2];
+//float a;
+//struct A temp23;
+int main()
+{	
+	struct A temp43;
+	temp43.here=1;
+
+	c2[0]=1;
+	return 0;
+}

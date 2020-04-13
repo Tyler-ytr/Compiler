@@ -1,39 +1,13 @@
-//struct test
-/*
-struct Position
+int func(int i)
 {
-float x;
-};
-
-
-struct Position
-{
-int y;
-};
-*/
-/*
-struct A{
-int here;
-int temp1[10][3][2];
-struct Position temp;
-};
-*/
-/*
-struct {
-int b;
-struct Position temp;
-};
-struct {
-int b;
-
-};
-struct able{
-};
-*/
-int a;
-float b,c;
-//float a;
-//struct A temp23;
-int main()
-{
+return i;
 }
+
+int func()
+{
+return 0;
+}
+
+ int main()
+ {
+ }
