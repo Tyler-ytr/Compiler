@@ -17,7 +17,7 @@ struct FieldList_{
 	FieldList tail;//下一个域
 };
 struct Type_{
-	enum { BASIC=0,ARRAY=1,STRUCTURE=2,FUNCTION=3} kind;
+	enum { BASIC=0,ARRAY=1,STRUCTURE=2,FUNCTION=3,STRUCT_NAME_=4} kind;
 	union{
 		//基本类型
 		int basic;//0表示int,1表示float;
@@ -75,10 +75,13 @@ struct Symbol_bucket *enter_scope();//进入作用域;返回一个函数头;
 struct Symbol_bucket* exit_scope();//出作用域,删除;返回尾部作用域;
 void show_global_table();
 void show_scope_table();
+void show_struct_table();
 
+int check_type_array_strong(Type A,Type B);
 void push_function_dec(char*name,int column);
 void check_function_def();
 
+int query_symbol_exist2(Type* type,char*name,int*ifdef,int depth,int*kind);
 
 
 #endif

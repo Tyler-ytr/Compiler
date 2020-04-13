@@ -4,6 +4,7 @@
 #include "semantic.h"
 extern FILE*yyin;
 //#define YYDEBUG 1
+
 extern int yydebug;
 extern int lexError;
 extern int syntaxError;

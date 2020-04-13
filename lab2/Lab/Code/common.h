@@ -2,6 +2,13 @@
 #define TREE_H
 #include <string.h>
 #include <stdio.h>
+#define _DEBUG_ 1
+
+#if _DEBUG_
+#define PR(...) printf(__VA_ARGS__)
+#else
+#define PR(...) 
+#endif
 typedef enum {
     LEX_INT=0,
     LEX_FLOAT=1,

@@ -97,8 +97,7 @@ struct Symbol_bucket*enter_scope(){
 	return result;
 }
 struct Symbol_bucket* exit_scope(){
-	;//To be done; 主要要做一个十字链表的插入和删除;
-	//printf("exit scope\n");
+
 	struct Symbol_bucket*tail=scope_head;
 	struct Symbol_bucket* tailbefore=scope_head;
 	while(tail->next!=NULL){
@@ -106,6 +105,7 @@ struct Symbol_bucket* exit_scope(){
 		tailbefore=tail;
 		tail=tail->next;
 	}
+
 	if(tail==scope_head){
 		printf("Can't exit scope_head\n");
 		assert(0);
@@ -142,13 +142,12 @@ struct Symbol_bucket* exit_scope(){
 					printf("drop table bug, %s not found!\n",scope_list[cnt]->field.name);
 					assert(0);
 				}
-				
 				struct Symbol_node*temp=global_head[value].head;//横向查找;
 				int flag=0;
 				if(temp==scope_list[cnt]){//global_head的头部就是要找的
-					//printf("here\n\n");
 					struct Symbol_node*temp_next=scope_list[cnt]->lnext;
 					global_head[value].head=temp_next;
+					//PR("drops:%s \n",scope_list[cnt]->field.name);
 					free(scope_list[cnt]);
 				}else{//global_head的头部不是要找的;b,head->a->b temp = head;temp=a;temp->lnext=b;退出;
 				while(temp->lnext!=NULL){
@@ -164,6 +163,8 @@ struct Symbol_bucket* exit_scope(){
 				}
 				//temp----> scope_list[cnt]----> temp_next
 				//scope_list[cnt-1]--->scope_list[cnt]
+
+				PR("drops:%s \n",scope_list[cnt]->field.name);
 				struct Symbol_node*temp_next=scope_list[cnt]->lnext;
 				temp->lnext=temp_next;
 				free(scope_list[cnt]);
@@ -213,6 +214,22 @@ void show_scope_table(){
 	}
 
 	printf("-----------------------scope_table_above----------------------\n");
+}
+void show_struct_table(){
+	printf("-----------------------scope_struct_below----------------------\n");
+		for(int i=0;i<SYMBOL_LEN;i++){
+		if(struct_head[i].head!=NULL){
+			printf("i:%d ",i);
+			struct Symbol_node*temp=struct_head[i].head;
+			while(temp!=NULL){
+					printf("name:%s type:%d ,",temp->structsymbol_name,temp->field.type->kind);
+					temp=temp->lnext;
+			}
+			printf("\n");
+		};
+	};
+
+	printf("-----------------------scope_struct_above----------------------\n");
 }
 
 int insert_symbol(Type type,char* name,int ifdef,int depth){
@@ -351,6 +368,46 @@ int query_symbol_name(char*name,int depth){
 	int nulldef;
 	return query_symbol(&nulltype,name,&nulldef,depth);
 }
+int query_symbol_exist2(Type* type,char*name,int*ifdef,int depth,int*kind){//存在 return 0,不存在return -1
+	int value=hash_name(name);
+//	printf("In query%s\n",name);
+	if(global_head[value].head==NULL){
+	//	printf("OMG!!!!!!!We don't have this symbol!!");
+		return -1;//没有命名,
+	}else{
+		struct Symbol_node*temp=global_head[value].head;
+		// printf("herer");
+		// if(temp->lnext==NULL){
+		// 	printf("herer");
+		// }
+		int flag=0;
+		while(temp!=NULL){
+			if(strcmp(temp->field.name,name)==0&&depth>=temp->depth){//进入一个局部作用域之后depth+=1,因此当要找的depth小于depth的时候说明该层的前一层有;
+			//	printf("able:%d\n",temp->type->kind);
+				*type=temp->field.type;
+				// if(temp->field.type==NULL){
+				// 	printf("GG\n");
+				// }
+				*ifdef=temp->ifdef;
+				*kind=temp->kind;
+				flag=1;
+				return 0;
+			}
+			temp=temp->lnext;
+			if(temp==NULL){
+				break;
+			}
+		}
+		if(flag==0){
+		//	printf("OMG2!!!!!!!We don't have this symbol!!");
+			return -1;//没有找到
+		}
+	}
+
+}
+
+
+
 int query_symbol(Type* type,char*name,int*ifdef,int depth){//存在 return 0,不存在return -1
 	int value=hash_name(name);
 //	printf("In query%s\n",name);
@@ -483,6 +540,7 @@ int check_type(Type A,Type B){
 					break;}
 				case STRUCTURE:{
 					//神必报错:a label can only be part of a statement and a declaration is not a statement,加了一个大括号就好了;
+				//	PR("HERE\n");
 					FieldList A_f=A->u.structure_.structure;
 					FieldList B_f=B->u.structure_.structure;
 					while(A_f!=NULL&&B_f!=NULL){
@@ -498,9 +556,20 @@ int check_type(Type A,Type B){
 					B_f=B->u.structure_.structure;
 					int flag=0;
 					while(A_f!=NULL&&B_f!=NULL){
-						if(check_type(A_f->type,B_f->type)==0){
+
+					//	PR("A: %d,B: %d\n",A_f->type->kind,B_f->type->kind);
+						if(A_f->type->kind!=B_f->type->kind){
 							return 0;
-						};
+						}
+						if(A_f->type->kind==ARRAY){
+							int array_result=check_type_array_strong(A_f->type,B_f->type);
+							if(array_result==0)return 0;
+							else return 1;
+						}else{
+							if(check_type(A_f->type,B_f->type)==0){
+								return 0;
+							};
+						}
 						A_f=A_f->tail;
 						B_f=B_f->tail;
 						;
@@ -540,6 +609,22 @@ int check_type(Type A,Type B){
 	return 0;
 }
 
+int check_type_array_strong(Type A,Type B){
+//	PR("Strong!\n");
+	if(A->u.array_.size!=B->u.array_.size){
+		return 0;
+	}
+	//否则size一样,比较type
+	int result1;
+	if(A->u.array_.elem->kind!=B->u.array_.elem->kind){
+		return 0;
+	}
+	if(A->u.array_.elem->kind==ARRAY){
+		result1=check_type_array_strong(A->u.array_.elem,B->u.array_.elem);
+	}else{
+	result1=check_type(A->u.array_.elem,B->u.array_.elem);}
+	return result1;
+}
 
 //备用项;
 unsigned int hash_name(char*name){

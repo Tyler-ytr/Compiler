@@ -14,6 +14,8 @@ ExtDecList -> VarDec
 */
 
 
+
+
 int depth_=0;
 int struct_no_name_cnt=0;
 struct Symbol_bucket* global_scope=NULL;
@@ -142,6 +144,7 @@ int CompSt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 	*/
 	/*StmtList -> Stmt StmtList
 | 空*/
+	//PR("In Compst: %s\n",cur->name);
 	struct Node* tempnode=getchild(cur,1);
 //printf("should be deflist:%s\n",tempnode->name);
 	if(strcmp(tempnode->name,"DefList")==0){
@@ -171,7 +174,7 @@ int StmtList_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 	| IF LP Exp RP Stmt ELSE Stmt
 	| WHILE LP Exp RP Stmt
 	*/
-//	printf("In StmtList_s\n");
+//	PR("In StmtList_s:%s\n",cur->name);
 	struct Node*Stmtnode=getchild(cur,0);
 	struct Node*tempnode=getchild(cur,1);
 	Stmt_s(Stmtnode,scope,res_type);
@@ -189,7 +192,6 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 	| IF LP Exp RP Stmt ELSE Stmt
 	| WHILE LP Exp RP Stmt
 	*/
-//	printf("In Stmt_s\n");
 	struct Node* tempnode1=getchild(cur,0);
 	if(strcmp(tempnode1->name,"CompSt")==0){
 		depth_+=1;
@@ -200,6 +202,7 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 	}else if(strcmp(tempnode1->name,"Exp")==0){
 		Type uselesstype=Exp_s(tempnode1);
 	}else if(strcmp(tempnode1->name,"RETURN")==0){
+		
 		struct Node* expnode=getchild(cur,1);
 		if(strcmp(expnode->name,"Exp")!=0){
 			printf("Stmt_s bug: should be Exp!\n");
@@ -209,14 +212,15 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 		if(returntype!=NULL){
 			int result=check_type(res_type,returntype);
 			if(result==0){
+
 				error_s(8,cur->column,NULL,NULL);
+				return -1;
 			}else{
 				;//exp里面已经因为NULL报错,反对套娃!
 			}
 		}		
 
 	}else if(strcmp(tempnode1->name,"WHILE")==0){
-	//	printf("In Stmt_s WHILE\n");
 		struct Node* expnode=getchild(cur,2);
 		struct Node* stmtnode=getchild(cur,4);
 		Type type=Exp_s(expnode);
@@ -225,6 +229,7 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 				;
 			}else{
 				error_s(7,cur->column,NULL,NULL);
+				//return -1;
 				//根据群聊,这个报错有点模棱两可,
 				/*171240009 何润雨 2020/3/27 15:53:36
 				请问如果if和while语句的条件不是int型变量的话，算操作数类型与操作符不匹配么？
@@ -232,10 +237,13 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 				老师 许畅 2020/3/27 15:58:03
 				想想有点道理，但这么算的话，要考虑太多边角了
 			*/
+
 			}
+			
 		}else{
 			;//Exp里面已经报过了,禁止套娃!
 		}
+		Stmt_s(stmtnode,scope,res_type);
 	}else if(strcmp(tempnode1->name,"IF")==0){
 		/*	| IF LP Exp RP Stmt
 	| IF LP Exp RP Stmt ELSE Stmt
@@ -252,19 +260,24 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 				;
 			}else{
 				error_s(7,cur->column,NULL,NULL);
+				//return -1;
 			}
 		}
 		if(tempnode6==NULL){
 			struct Node*stmtnode1=getchild(cur,4);
-			StmtList_s(stmtnode1,scope,res_type);
+
+			Stmt_s(stmtnode1,scope,res_type);
 		}else{
 			struct Node*stmtnode1=getchild(cur,4);
 			struct Node*stmtnode2=getchild(cur,6);
-			StmtList_s(stmtnode1,scope,res_type);
-			StmtList_s(stmtnode2,scope,res_type);
+
+			Stmt_s(stmtnode1,scope,res_type);
+
+			Stmt_s(stmtnode2,scope,res_type);
 		}
 		;
 	}else{
+		//PR("strucname:%s \n",cur->name);
 		printf("Stmt_s error: Impossible to get here!\n");
 		assert(0);
 	}
@@ -334,16 +347,42 @@ int Dec_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
 	struct Node*tempnode=getchild(cur,1);
 	if(tempnode==NULL){
 		int result=query_symbol_name(tempfield->name,depth_);//定义考虑的是当前层
+		Type querytype=(Type)malloc(sizeof(struct Type_));
+		int uselessifdef;
+		int querykind;
+		int result1=query_symbol_exist2(&querytype,tempfield->name,&uselessifdef,depth_,&querykind);
+	//	show_global_table();
+	// 应该还需要修改;
+	//	PR("herer:%s\n",tempfield->name);
+//		show_global_table();
 		if(result==0){
 			;//重复了报错;
 			error_s(3,cur->column,tempfield->name,NULL);
-		}else{
+		 }
+		else if(result1==0&&querytype->kind==STRUCTURE&&querykind==STRUCT_NAME){
+			;//与结构体名字重复了,报错
+			error_s(3,cur->column,tempfield->name,NULL);
+		}
+		else{
 			//插入！
 			struct Symbol_node*insert_node=create_symbolnode(VARIABLE,tempfield->type,tempfield->name,1,depth_);
 			insert_symbol2(insert_node,scope);
 		}
 	}else{
 		//| VarDec ASSIGNOP Exp*/
+		int result=query_symbol_name(tempfield->name,depth_);//定义考虑的是当前层
+		Type querytype=(Type)malloc(sizeof(struct Type_));
+		int uselessifdef;
+		int querykind;
+		int result1=query_symbol_exist2(&querytype,tempfield->name,&uselessifdef,depth_,&querykind);
+		if(result==0){
+			;//重复了报错;
+			error_s(3,cur->column,tempfield->name,NULL);}
+		else{
+		
+		struct Symbol_node*insert_node=create_symbolnode(VARIABLE,tempfield->type,tempfield->name,1,depth_);
+		insert_symbol2(insert_node,scope);
+
 		struct Node*expnode=getchild(cur,2);
 		Type exp_type=Exp_s(expnode);
 
@@ -352,9 +391,12 @@ int Dec_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
 			int result=check_type(tempfield->type,exp_type);
 			if(result==0){
 				error_s(5,cur->column,NULL,NULL);
-			}else{
-				struct Symbol_node*insert_node=create_symbolnode(VARIABLE,tempfield->type,tempfield->name,1,depth_);
-				insert_symbol2(insert_node,scope);
+			}else if(result1==0&&querytype->kind==STRUCTURE&&querykind==STRUCT_NAME){
+			;//与结构体名字重复了,报错
+			error_s(3,cur->column,tempfield->name,NULL);
+		}	else{
+				;// struct Symbol_node*insert_node=create_symbolnode(VARIABLE,tempfield->type,tempfield->name,1,depth_);
+				// insert_symbol2(insert_node,scope);
 			}
 		}else{
 			;//printf("Exp_type == NULL!!!!!\n\n"); 如果是NULL的话,exp里面必然已经报错,拒绝重复报错;
@@ -367,7 +409,8 @@ int Dec_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
 		// 	//插入该变量;
 		// 	struct Symbol_node*insert_node=create_symbolnode(VARIABLE,tempfield->type,tempfield->name,1,depth_);
 		// 	insert_symbol2(insert_node,scope);
-		// }
+		// };
+		}
 	}
 	return 0;
 }
@@ -443,10 +486,12 @@ Type Exp_s(struct Node*cur){
 		//	printf("here1:%s\n\n",tempnode1->string_contant);
 			Type querytype0=(Type)(malloc(sizeof(struct Type_)));
 			int queryifdef0;
+		//	int querykind;
 			int result_local=query_symbol(&querytype0,tempnode1->string_contant,&queryifdef0,depth_);//当前层;
 			Type querytype1=(Type)(malloc(sizeof(struct Type_)));
 			int queryifdef1;
-			int result_global=query_symbol_exist(&querytype1,tempnode1->string_contant,&queryifdef1,depth_);//所有层;
+			int querykind;
+			int result_global=query_symbol_exist2(&querytype1,tempnode1->string_contant,&queryifdef1,depth_,&querykind);//所有层;
 			// printf("result1:%d result2:%d\n",result_local,result_global);
 			// printf("out;;\n");
 			if(result_local==0){
@@ -456,9 +501,10 @@ Type Exp_s(struct Node*cur){
 				// printf("out;1;\n");
 				return result;
 			}else{
-				;//查看全局层,如果没有就挂!
-				if(result_global!=0){
+				;//查看全局层,如果没有就挂!如果有但是却是struct也挂;
+				if(result_global!=0||(result_global==0&&querykind!=VARIABLE)){
 					;//没有找到全局的,挂!
+			//		show_global_table();
 					error_s(1,cur->column,tempnode1->string_contant,NULL);
 					return NULL;
 				}else{
@@ -480,11 +526,13 @@ Type Exp_s(struct Node*cur){
 		}
 		;
 	}else{
+	//	PR("herere\n");
 		struct Node*tempnode3=getchild(cur,2);
 		//第一部分;
 		if(tempnode3!=NULL){
+
 			struct Node*tempnode4=getchild(cur,3);
-			if(tempnode4==NULL&&strcmp(tempnode3->name,"Exp")==0){//3元并且第三项是Exp
+			if(tempnode4==NULL&&strcmp(tempnode3->name,"Exp")==0&&strcmp(tempnode2->name,"LB")!=0){//3元并且第三项是Exp
 				struct Node*Expnode1=tempnode1;
 				struct Node*Expnode2=tempnode3;
 				if(strcmp(Expnode1->name,"Exp")!=0){
@@ -493,6 +541,7 @@ Type Exp_s(struct Node*cur){
 				}
 				Type exp1type=Exp_s(Expnode1);
 				Type exp2type=Exp_s(Expnode2);
+			//	printf("hererer\n");
 				if(exp1type!=NULL&&exp2type!=NULL){
 					
 					int tempresult=check_type(exp1type,exp2type);
@@ -508,6 +557,7 @@ Type Exp_s(struct Node*cur){
 					}else{
 						//左值错误,左值只能够是变量; 选择之前先千里眼判断好;
 						result=exp1type;
+						//printf("nodename:%s\n",tempnode2->name);
 						return result;
 					}
 				}else{
@@ -517,6 +567,7 @@ Type Exp_s(struct Node*cur){
 			}
 		}
 		//第二部分;
+		//PR("herere\n");
 		if(strcmp(tempnode1->name,"LP")==0||strcmp(tempnode1->name,"MINUS")==0||strcmp(tempnode1->name,"NOT")==0){
 			struct Node* expnode=tempnode2;
 			if(strcmp(expnode->name,"Exp")!=0){
@@ -536,6 +587,7 @@ Type Exp_s(struct Node*cur){
 		| Exp DOT ID3 结构体;
 		*/
 		//函数部分,因为此时不是一元的,只需要判断第一个是不是ID;需要检查这个函数的存在性,得到函数的params交给下一层检查,并且查看这个ID是不是函数类型
+
 		if(strcmp(tempnode1->name,"ID")==0){
 			char*funcname=tempnode1->string_contant;
 			Type querytype=(Type)(malloc(sizeof(struct Type_)));
@@ -549,7 +601,8 @@ Type Exp_s(struct Node*cur){
 					return NULL;
 				}
 			}
-			if(queryifdef!=1||queryresult==-1){//没找到或者不是定义;
+
+			if(queryresult==-1){//没找到或者不是定义;  感觉声明了也可以用,比如gcc
 				error_s(2,cur->column,funcname,NULL);
 				return NULL;
 			}
@@ -559,6 +612,28 @@ Type Exp_s(struct Node*cur){
 					error_s(9,cur->column,NULL,NULL);
 					return NULL;
 				}else{
+				//	PR("NAME:%s\n",tempnode3->child->child->name);
+					/*Args -> Exp COMMA Args
+					| Exp;
+					*/
+					//检查args的数量;
+					int cnt=0;
+					struct Node*cntnode=tempnode3;
+					while(1){
+						cnt+=1;
+						struct Node*tempcntnode=getchild(cntnode,1);
+						if(tempcntnode==NULL){
+							break;
+						}
+						//cnt+=1;
+						cntnode=getchild(cntnode,2);
+					}
+					//printf("cnt:%d shouldbe:%d\n",cnt,querytype->u.function.paramnums);
+					if(cnt!=querytype->u.function.paramnums){
+						error_s(9,cur->column,NULL,NULL);
+						return NULL;
+					}
+
 					int argresult=Arg_s(tempnode3,querytype->u.function.params);
 					if(argresult==0){
 						return result;
@@ -579,36 +654,45 @@ Type Exp_s(struct Node*cur){
 		}
 		else{
 			struct Node*tempnode4=getchild(cur,3);
+			
 			if(tempnode4==NULL){
 				//结构体部分,首先这个结构体要存在,然后这个域名要存在,然后返回这个域名的type
 				if(strcmp(tempnode1->name,"Exp")==0&&strcmp(tempnode2->name,"DOT")==0&&strcmp(tempnode3->name,"ID")==0){
 					Type exptype=Exp_s(tempnode1);
+					
 					// if(exptype==NULL)
 					// printf("ggs\n");
-					if(exptype->kind!=STRUCTURE){
-						error_s(13,cur->column,NULL,NULL);
-						return NULL;
-					}else{
-						;//查域名;
-						//printf("ggs2\n");
-						char*idname=tempnode3->string_contant;
-						//printf("here!!\n");
-						char*fieldname=(char*)(malloc(sizeof(1+64)));
-						strcpy(fieldname,idname);
-						strcat(fieldname,exptype->u.structure_.name);
-						Type querytype=(Type)(malloc(sizeof(struct Type_)));
-						int queryresult=query_struct(&querytype,fieldname);
-						if(queryresult==0){
-							//找到了!
-							result=querytype;
-							return result;
-						}else{
-							//域名不存在;
-							error_s(14,cur->column,idname,NULL);
+					if(exptype!=NULL){
+						if(exptype->kind!=STRUCTURE){
+							error_s(13,cur->column,NULL,NULL);
 							return NULL;
+						}else{
+							;//查域名;
+							//printf("ggs2\n");
+							char*idname=tempnode3->string_contant;
+							//printf("here!!\n");
+							char*fieldname=(char*)(malloc(sizeof(char)*(1+strlen(idname)+strlen(exptype->u.structure_.name))));
+							strcpy(fieldname,idname);
+							strcat(fieldname,exptype->u.structure_.name);
+							Type querytype=(Type)(malloc(sizeof(struct Type_)));
+							int queryresult=query_struct(&querytype,fieldname);
+						//	printf("queryname:%s\n",fieldname);
+							
+							if(queryresult==0){
+								//找到了!
+								result=querytype;
+								return result;
+							}else{
+								//域名不存在;
+							//	printf("idname:%s,expname:%s,queryname:%s\n",idname,exptype->u.structure_.name,fieldname);
+							//	show_struct_table();
+								error_s(14,cur->column,idname,NULL);
+								return NULL;
+							}
 						}
+					;}else{
+						;return NULL;
 					}
-					;
 				}
 			}else{;
 				//数组部分;| Exp LB Exp RB4 数组
@@ -620,7 +704,7 @@ Type Exp_s(struct Node*cur){
 						return NULL;
 					}
 					int checkresult=check_type(type1,type3);
-					
+				//	PR("array:%d",type1->kind);
 					if(type1->kind!=ARRAY){
 						//printf("type:%d,name:%s",type1->kind,tempnode1->child->string_contant);
 						error_s(10,cur->column,NULL,NULL);
@@ -774,6 +858,15 @@ FieldList VarList_s(struct Node* cur,struct Symbol_bucket*scope){
 //	printf("in VarList\n");
 	struct Node*paramdecnode=getchild(cur,0);
 	FieldList result=ParamDec_s(paramdecnode);
+
+	Type querytype1=(Type)(malloc(sizeof(struct Type_)));
+	int queryifdef1;
+	int result1=query_symbol(&querytype1,result->name,&queryifdef1,0);
+	//printf("hererer\n");
+	if(result1==0&&querytype1!=NULL&&querytype1->kind==STRUCTURE){
+			error_s(3,cur->column,result->name,NULL);
+		}
+
 	struct Symbol_node *insert_node=create_symbolnode(VARIABLE,result->type,result->name,1,depth_);
 	insert_symbol2(insert_node,scope);
 	//result->tail=NULL;
@@ -787,6 +880,16 @@ FieldList VarList_s(struct Node* cur,struct Symbol_bucket*scope){
 		tempnode=getchild(tempnode,2);
 		struct Node*tempparam=getchild(tempnode,0);
 		FieldList tempfield=ParamDec_s(tempparam);
+
+		Type querytype=(Type)(malloc(sizeof(struct Type_)));
+		int queryifdef;
+		int result1=query_symbol(&querytype,tempfield->name,&queryifdef,0);
+	//	printf("hererer\n");
+		if(result1==0&&querytype!=NULL&&querytype->kind==STRUCTURE){
+			error_s(3,cur->column,tempfield->name,NULL);
+		}
+
+
 		insert_node=create_symbolnode(VARIABLE,tempfield->type,tempfield->name,1,depth_);
 		insert_symbol2(insert_node,scope);
 		//往局部作用域里面插入元素;
@@ -811,6 +914,7 @@ FieldList ParamDec_s(struct Node*cur){
 	struct Node*Vardecnode=getchild(cur,1);
 	Type nodetype=Specifier_s(Specifiernode);
 	FieldList result=VarDec_s(Vardecnode,nodetype);
+
 //	printf("%s\n",result->name);
 	return result;
 
@@ -870,7 +974,10 @@ Type Specifier_s(struct Node*cur){
 			else if(strcmp(tempnode2->name,"ID")==0){
 				char*struct_name=tempnode2->string_contant;
 			//	printf("struct name:%s\n",struct_name);
-				if(query_symbol_name(struct_name,depth_)==0){//struct name在全局,不需要用exist
+				Type querytype=(Type)malloc(sizeof(struct Type_));
+				int queryifdef;
+				int result1=query_symbol_exist(&querytype,struct_name,&queryifdef,depth_);
+				if(result1==0){//struct name在全局,不需要用exist
 					error_s(16,tempnode2->column,struct_name,NULL);
 					return NULL;
 				}else{
