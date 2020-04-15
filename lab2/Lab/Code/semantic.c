@@ -51,14 +51,8 @@ int semantic_check(struct Node*cur){
 	Program_s(cur);
 }
 int Program_s(struct Node* cur){
-	//To be done ; 一些init工作;
-	// if(init_symboltable()==0){
-	// 	;
-	// }else{
-	// 	printf("Failed to init symboltable in Program_s");
-	// }
+	// 一些init工作;
 	global_scope=init_symboltable();
-	//printf("In program_s\n\n");
 	struct Node* ExtDefListnode=getchild(cur,0);
 	ExtDefList_s(ExtDefListnode);
 	check_function_def();
@@ -726,8 +720,8 @@ Type Exp_s(struct Node*cur){
 		}
 		;
 	}
-	printf("Exp bug! 漏网之鱼\n");
-	assert(0);
+	// printf("Exp bug! 漏网之鱼\n");
+	// assert(0);
 	return NULL;//防止漏网之鱼;
 
 
@@ -846,8 +840,6 @@ void FunDec_s(struct Node*cur,const int ifdef,const Type res_type,struct Symbol_
 	//声明的函数插入声明链表用于最后的查找;
 	
 
-
-	// struct Symbol_node*insert_node=create_symbolnode(FUNCTION_NAME,functiontype,funcname,ifdef,depth_);
 
 	;
 }

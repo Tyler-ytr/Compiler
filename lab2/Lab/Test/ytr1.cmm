@@ -1,0 +1,14 @@
+struct not_variable {
+    int a;
+} is_variable;
+
+int main() {
+	struct miaowu{
+		struct not_variable c;
+		int b;
+	} miao;
+	miao.c.a=1;
+	miao.b=2;
+  //  is_variable = not_variable;
+   // not_variable = is_variable;
+}

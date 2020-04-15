@@ -376,10 +376,6 @@ int query_symbol_exist2(Type* type,char*name,int*ifdef,int depth,int*kind){//存
 		return -1;//没有命名,
 	}else{
 		struct Symbol_node*temp=global_head[value].head;
-		// printf("herer");
-		// if(temp->lnext==NULL){
-		// 	printf("herer");
-		// }
 		int flag=0;
 		while(temp!=NULL){
 			if(strcmp(temp->field.name,name)==0&&depth>=temp->depth){//进入一个局部作用域之后depth+=1,因此当要找的depth小于depth的时候说明该层的前一层有;
@@ -399,7 +395,6 @@ int query_symbol_exist2(Type* type,char*name,int*ifdef,int depth,int*kind){//存
 			}
 		}
 		if(flag==0){
-		//	printf("OMG2!!!!!!!We don't have this symbol!!");
 			return -1;//没有找到
 		}
 	}

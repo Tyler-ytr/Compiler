@@ -2,7 +2,7 @@
 #define TREE_H
 #include <string.h>
 #include <stdio.h>
-#define _DEBUG_ 1
+//#define _DEBUG_ 1
 
 #if _DEBUG_
 #define PR(...) printf(__VA_ARGS__)
