@@ -74,6 +74,55 @@ void check_function_def(){
 		temp=temp->next;
 	}
 }
+
+// struct Symbol_node* create_symbolnode_symbol_table(int kind,Type type,char*name,int ifdef,int depth)
+// {
+// 	struct Symbol_node *insert_node=(struct Symbol_node *)malloc(sizeof(struct Symbol_node));
+// 	insert_node->lnext=NULL;
+// 	insert_node->cnext=NULL;
+// 	insert_node->kind=kind;
+// 	insert_node->field.type=type;
+// 	strcpy(insert_node->field.name,name);
+// 	insert_node->depth=depth;
+// 	insert_node->ifdef=ifdef;
+// 	return insert_node;
+// ;
+// }
+
+// void create_write(){
+// 	//int write(int function write n); 
+// 	char*funcname=(char*)malloc(sizeof(char*)*32);
+// 	strcpy(funcname,"write");
+// 	//funcname结束
+// 	Type functiontype=(Type)(malloc(sizeof(struct Type_)));
+
+// 	FieldList params=(FieldList)(malloc(sizeof(struct FieldList_)));
+// 	strcpy(params->name,"function write n");
+// 	params->type=(Type)(malloc(sizeof(struct Type_)));
+// 	params->type->kind=BASIC;
+// 	params->type->u.basic=0;
+// 	//int function write n;
+// 	Type returntype=(Type)(malloc(sizeof(struct Type_)));
+// 	returntype->kind=BASIC;
+// 	returntype->u.basic=0;
+// 	//return type
+// 	functiontype->kind=FUNCTION;
+// 	functiontype->u.function.paramnums=1;
+// 	functiontype->u.function.returnparam=returntype;
+// 	functiontype->u.function.params=params;
+// 	//functiontype结束;
+// 	int ifdef=1;
+// 	int depthfake=0;
+// 	struct Symbol_node*insert_node=create_symbolnode_symbol_table(FUNCTION_NAME,functiontype,funcname,ifdef,depthfake);
+
+// 	//		struct Symbol_node*insert_node=create_symbolnode(FUNCTION_NAME,functiontype,funcname,ifdef,depth_);
+	
+// }
+// void create_read(){
+// 	//int read();
+
+// 	;
+// }
 struct Symbol_bucket* init_symboltable(){
 	//to be done
 	for(int i=0;i<SYMBOL_LEN;i++){
@@ -83,104 +132,109 @@ struct Symbol_bucket* init_symboltable(){
 	scope_head=malloc(sizeof(struct Symbol_bucket));
 	scope_head->next=NULL;
 	scope_head->head=NULL;
+	
+	
 	return scope_head;
 }
 struct Symbol_bucket*enter_scope(){
-	struct Symbol_bucket *result=malloc(sizeof(struct Symbol_bucket));
-	result->next=NULL;
-	result->head=NULL;
-	struct Symbol_bucket *tail=scope_head;
-	while(tail->next!=NULL){
-		tail=tail->next;
-	}
-	tail->next=result;
-	return result;
+	// struct Symbol_bucket *result=malloc(sizeof(struct Symbol_bucket));
+	// result->next=NULL;
+	// result->head=NULL;
+	// struct Symbol_bucket *tail=scope_head;
+	// while(tail->next!=NULL){
+	// 	tail=tail->next;
+	// }
+	// tail->next=result;
+	// return result;
+	return scope_head;
+	//实验三不需要局部作用域;
 }
 struct Symbol_bucket* exit_scope(){
+	return scope_head;
+	//实验三不需要局部作用域;
+	// struct Symbol_bucket*tail=scope_head;
+	// struct Symbol_bucket* tailbefore=scope_head;
+	// while(tail->next!=NULL){
+	// 	//printf("herer\n");
+	// 	tailbefore=tail;
+	// 	tail=tail->next;
+	// }
 
-	struct Symbol_bucket*tail=scope_head;
-	struct Symbol_bucket* tailbefore=scope_head;
-	while(tail->next!=NULL){
-		//printf("herer\n");
-		tailbefore=tail;
-		tail=tail->next;
-	}
+	// if(tail==scope_head){
+	// 	printf("Can't exit scope_head\n");
+	// 	assert(0);
+	// }else if(tail->head!=NULL){
+	// 		//printf("herer\n");
 
-	if(tail==scope_head){
-		printf("Can't exit scope_head\n");
-		assert(0);
-	}else if(tail->head!=NULL){
-			//printf("herer\n");
+	// 		struct Symbol_node* scope_tail=tail->head;//目的是这个纵向链表的尾部
+	// 		struct Symbol_node* scope_tail_before=scope_tail;//目的是这个纵向链表的尾部的前一个;
+	// 		int cnt=0;//记录链表的个数
 
-			struct Symbol_node* scope_tail=tail->head;//目的是这个纵向链表的尾部
-			struct Symbol_node* scope_tail_before=scope_tail;//目的是这个纵向链表的尾部的前一个;
-			int cnt=0;//记录链表的个数
+	// 		while(scope_tail->cnext!=NULL){
+	// 			scope_tail_before=scope_tail;
+	// 			scope_tail=scope_tail->cnext;
+	// 			cnt+=1;
+	// 		}
+	// 		struct  Symbol_node** scope_list=(struct Symbol_node**)malloc(sizeof(struct Symbol_node**)*(cnt+2));
+	// 		scope_tail=tail->head;
+	// 		scope_tail_before=scope_tail;
+	// 		cnt=0;
+	// 		scope_list[cnt]=scope_tail;//第一个
+	// 		while(scope_tail->cnext!=NULL){
+	// 			scope_list[cnt]=scope_tail;
+	// 			scope_tail_before=scope_tail;
+	// 			scope_tail=scope_tail->cnext;
+	// 			cnt+=1;
+	// 		}
+	// 		scope_list[cnt]=scope_tail;//最后一个;
+	// 		int tempcnt=cnt;
+	// 		//首先找到这个symbol在table里面的前一项,然后横向删除,然后纵向删除;
+	// 		for(;cnt>=0;cnt--){
+	// 	//		printf("cnt:%d",cnt);
+	// 			int value=hash_name(scope_list[cnt]->field.name);
+	// 			if(global_head[value].head==NULL){
+	// 				printf("drop table bug, %s not found!\n",scope_list[cnt]->field.name);
+	// 				assert(0);
+	// 			}
+	// 			struct Symbol_node*temp=global_head[value].head;//横向查找;
+	// 			int flag=0;
+	// 			if(temp==scope_list[cnt]){//global_head的头部就是要找的
+	// 				struct Symbol_node*temp_next=scope_list[cnt]->lnext;
+	// 				global_head[value].head=temp_next;
+	// 				//PR("drops:%s \n",scope_list[cnt]->field.name);
+	// 				free(scope_list[cnt]);
+	// 			}else{//global_head的头部不是要找的;b,head->a->b temp = head;temp=a;temp->lnext=b;退出;
+	// 			while(temp->lnext!=NULL){
+	// 				if(temp->lnext==scope_list[cnt]){
+	// 					flag=1;
+	// 					break;
+	// 				}
+	// 				temp=temp->lnext;
+	// 			}
+	// 			if(flag==0){
+	// 				printf("drop table bug, %s not found!\n",scope_list[cnt]->field.name);
+	// 				assert(0);
+	// 			}
+	// 			//temp----> scope_list[cnt]----> temp_next
+	// 			//scope_list[cnt-1]--->scope_list[cnt]
 
-			while(scope_tail->cnext!=NULL){
-				scope_tail_before=scope_tail;
-				scope_tail=scope_tail->cnext;
-				cnt+=1;
-			}
-			struct  Symbol_node** scope_list=(struct Symbol_node**)malloc(sizeof(struct Symbol_node**)*(cnt+2));
-			scope_tail=tail->head;
-			scope_tail_before=scope_tail;
-			cnt=0;
-			scope_list[cnt]=scope_tail;//第一个
-			while(scope_tail->cnext!=NULL){
-				scope_list[cnt]=scope_tail;
-				scope_tail_before=scope_tail;
-				scope_tail=scope_tail->cnext;
-				cnt+=1;
-			}
-			scope_list[cnt]=scope_tail;//最后一个;
-			int tempcnt=cnt;
-			//首先找到这个symbol在table里面的前一项,然后横向删除,然后纵向删除;
-			for(;cnt>=0;cnt--){
-		//		printf("cnt:%d",cnt);
-				int value=hash_name(scope_list[cnt]->field.name);
-				if(global_head[value].head==NULL){
-					printf("drop table bug, %s not found!\n",scope_list[cnt]->field.name);
-					assert(0);
-				}
-				struct Symbol_node*temp=global_head[value].head;//横向查找;
-				int flag=0;
-				if(temp==scope_list[cnt]){//global_head的头部就是要找的
-					struct Symbol_node*temp_next=scope_list[cnt]->lnext;
-					global_head[value].head=temp_next;
-					//PR("drops:%s \n",scope_list[cnt]->field.name);
-					free(scope_list[cnt]);
-				}else{//global_head的头部不是要找的;b,head->a->b temp = head;temp=a;temp->lnext=b;退出;
-				while(temp->lnext!=NULL){
-					if(temp->lnext==scope_list[cnt]){
-						flag=1;
-						break;
-					}
-					temp=temp->lnext;
-				}
-				if(flag==0){
-					printf("drop table bug, %s not found!\n",scope_list[cnt]->field.name);
-					assert(0);
-				}
-				//temp----> scope_list[cnt]----> temp_next
-				//scope_list[cnt-1]--->scope_list[cnt]
-
-				PR("drops:%s \n",scope_list[cnt]->field.name);
-				struct Symbol_node*temp_next=scope_list[cnt]->lnext;
-				temp->lnext=temp_next;
-				free(scope_list[cnt]);
-				}
-			}
+	// 			PR("drops:%s \n",scope_list[cnt]->field.name);
+	// 			struct Symbol_node*temp_next=scope_list[cnt]->lnext;
+	// 			temp->lnext=temp_next;
+	// 			free(scope_list[cnt]);
+	// 			}
+	// 		}
 			
-		//	free(tail->head);//也就是free(scope_list[0]);
+	// 	//	free(tail->head);//也就是free(scope_list[0]);
 
-			free(scope_list);
-			scope_list=NULL;
-	}
-	//释放scope链表的tail;
-	tailbefore->next=NULL;
-	free(tail);
-	tail=NULL;
-	return tailbefore;
+	// 		free(scope_list);
+	// 		scope_list=NULL;
+	// }
+	// //释放scope链表的tail;
+	// tailbefore->next=NULL;
+	// free(tail);
+	// tail=NULL;
+	// return tailbefore;
 }
 void show_global_table(){
 	printf("-----------------------global_table_below----------------------\n");
