@@ -186,6 +186,7 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 	| IF LP Exp RP Stmt ELSE Stmt
 	| WHILE LP Exp RP Stmt
 	*/
+	
 	struct Node* tempnode1=getchild(cur,0);
 	if(strcmp(tempnode1->name,"CompSt")==0){
 		depth_+=1;
@@ -194,6 +195,7 @@ int Stmt_s(struct Node*cur,struct Symbol_bucket*scope,Type res_type){
 		exit_scope();
 		depth_-=1;
 	}else if(strcmp(tempnode1->name,"Exp")==0){
+	
 		Type uselesstype=Exp_s(tempnode1);
 	}else if(strcmp(tempnode1->name,"RETURN")==0){
 		
@@ -283,7 +285,6 @@ int DefList_s(struct Node*cur,struct Symbol_bucket*scope){
 /*	DefList -> Def DefList
 | 空 注意为空的时候使def ---> 空而不是 Deflist-->空
 Def -> Specifier DecList SEMI*/
-	//printf("In deflist:%s\n",cur->name);
 	struct Node*tempnode=getchild(cur,0);
 	if(tempnode!=NULL){
 		struct Node*defnode=tempnode;
@@ -303,14 +304,11 @@ int Def_s(struct Node*cur,struct Symbol_bucket*scope){
 DecList -> Dec
 | Dec COMMA DecList*/
 	struct Node*specifiernode=getchild(cur,0);
-//	printf("in def1\n");
 	struct Node*declistnode=getchild(cur,1);
 	//printf("in def2\n");
 	Type type=Specifier_s(specifiernode);
 	// if(type==NULL)
-	// printf("in def3\n");
 	DecList_s(declistnode,scope,type);
-	// printf("in def4\n");
 	return 0;
 }
 int DecList_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
@@ -319,7 +317,6 @@ int DecList_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
 | Dec COMMA DecList
 	Dec -> VarDec
 | VarDec ASSIGNOP Exp*/
-//	printf("In declist_s:%s\n",cur->name);
 	struct Node*decnode=getchild(cur,0);
 	Dec_s(decnode,scope,type);
 	struct Node*tempnode=getchild(cur,1);
@@ -328,6 +325,7 @@ int DecList_s(struct Node*cur,struct Symbol_bucket*scope,Type type){
 		if(declistnode!=NULL)
 		DecList_s(declistnode,scope,type);
 	}
+
 
 	return 0;
 }
@@ -432,7 +430,7 @@ Type Exp_s(struct Node*cur){
 	| INT1 ok
 	| FLOAT1 ok
 	*/
-//	printf("In Exp\n");
+	if(cur==NULL){return NULL;};
 	Type result=NULL;
 	struct Node*tempnode1=getchild(cur,0);
 	struct Node*tempnode2=getchild(cur,1);
@@ -627,7 +625,6 @@ Type Exp_s(struct Node*cur){
 						error_s(9,cur->column,NULL,NULL);
 						return NULL;
 					}
-
 					int argresult=Arg_s(tempnode3,querytype->u.function.params);
 					if(argresult==0){
 						return result;
@@ -691,7 +688,6 @@ Type Exp_s(struct Node*cur){
 			}else{;
 				//数组部分;| Exp LB Exp RB4 数组
 				if(strcmp(tempnode1->name,"Exp")==0&&strcmp(tempnode2->name,"LB")==0&&strcmp(tempnode3->name,"Exp")==0){
-					//printf("herererer\n");
 					Type type1=Exp_s(tempnode1);
 					Type type3=Exp_s(tempnode3);
 					if(type1==NULL||type3==NULL){
@@ -810,10 +806,10 @@ void FunDec_s(struct Node*cur,const int ifdef,const Type res_type,struct Symbol_
 		flag=1;//找到一次了,当且仅当定义的时候可以填表;
 		if(ifdef==1){
 			if(query_ifdef==1){
-				error_s(4,cur->column,IDnode->name,NULL);//重复定义;
+				error_s(4,cur->column,IDnode->string_contant,NULL);//重复定义;
 				flag=2;
 			}else if(check_type(query_type,functiontype)==0){
-						error_s(19,cur->column,IDnode->name,NULL);//定义和声明type不同报错;
+						error_s(19,cur->column,IDnode->string_contant,NULL);//定义和声明type不同报错;
 						flag=3;	
 			}else{//定义,没有重复定义,不和前面的冲突,填表!
 				struct Symbol_node*insert_node=create_symbolnode(FUNCTION_NAME,functiontype,funcname,ifdef,depth_);
@@ -847,10 +843,8 @@ FieldList VarList_s(struct Node* cur,struct Symbol_bucket*scope){
 	/*VarList -> ParamDec COMMA VarList
 | ParamDec;*/
 	//需要注册;
-//	printf("in VarList\n");
 	struct Node*paramdecnode=getchild(cur,0);
 	FieldList result=ParamDec_s(paramdecnode);
-
 	Type querytype1=(Type)(malloc(sizeof(struct Type_)));
 	int queryifdef1;
 	int result1=query_symbol(&querytype1,result->name,&queryifdef1,0);
@@ -901,12 +895,10 @@ FieldList VarList_s(struct Node* cur,struct Symbol_bucket*scope){
 }
 FieldList ParamDec_s(struct Node*cur){
 	/*ParamDec -> Specifier VarDec*/
-//	printf("ParamDec:");
 	struct Node*Specifiernode=getchild(cur,0);
 	struct Node*Vardecnode=getchild(cur,1);
 	Type nodetype=Specifier_s(Specifiernode);
 	FieldList result=VarDec_s(Vardecnode,nodetype);
-
 //	printf("%s\n",result->name);
 	return result;
 
@@ -945,7 +937,6 @@ Type Specifier_s(struct Node*cur){
 			assert(0);
 		}
 	}else if(strcmp(tempnode0->name,"StructSpecifier")==0){
-		;
 		type->kind=STRUCTURE;
 		struct Node*structnode=getchild(tempnode0,0);
 		struct Node* tempnode1=getchild(tempnode0,1);

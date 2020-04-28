@@ -520,22 +520,28 @@ int check_type(Type A,Type B){
 					int result2=0;
 					int cnt1=0;int cnt2=0;
 					Type temp1=A;Type temp2=B;
+				//	printf("A:%d size:%d\n",A->kind,A->u.array_.size);
+					// if(A->u.array_.elem==NULL){
+					// 	printf("here\n");
+					// }
+					//printf("next kind:%d\n",A->u.array_.elem->u.array_.elem->kind)	;
 					while(temp1!=NULL){
 						temp1=temp1->u.array_.elem;
 						cnt1+=1;
+						if(temp1->kind!=ARRAY)break;
 					}
 					while(temp2!=NULL){
 						temp2=temp2->u.array_.elem;
 						cnt2+=1;
+						if(temp2->kind!=ARRAY)break;//我去这里tm居然有错的!
 					}
 				//	printf("cnt1:%d cnt2:%d \n",cnt1,cnt2);
 					result2=(cnt1==cnt2);
-
 					return result2;
 					break;}
 				case STRUCTURE:{
 					//神必报错:a label can only be part of a statement and a declaration is not a statement,加了一个大括号就好了;
-				//	PR("HERE\n");
+					PR("HERE\n");
 					FieldList A_f=A->u.structure_.structure;
 					FieldList B_f=B->u.structure_.structure;
 					while(A_f!=NULL&&B_f!=NULL){
