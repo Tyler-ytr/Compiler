@@ -50,13 +50,71 @@ int semantic_check(struct Node*cur){
 	depth_=0;
 	Program_s(cur);
 }
+void create_write(){
+	//int write(int function write n); 
+	char*funcname=(char*)malloc(sizeof(char*)*32);
+	strcpy(funcname,"write");
+	//funcname结束
+	Type functiontype=(Type)(malloc(sizeof(struct Type_)));
+
+	FieldList params=(FieldList)(malloc(sizeof(struct FieldList_)));
+	strcpy(params->name,"function write n");
+	params->type=(Type)(malloc(sizeof(struct Type_)));
+	params->type->kind=BASIC;
+	params->type->u.basic=0;
+	//int function write n;
+	Type returntype=(Type)(malloc(sizeof(struct Type_)));
+	returntype->kind=BASIC;
+	returntype->u.basic=0;
+	//return type
+	functiontype->kind=FUNCTION;
+	functiontype->u.function.paramnums=1;
+	functiontype->u.function.returnparam=returntype;
+	functiontype->u.function.params=params;
+	//functiontype结束;
+	int ifdef=1;
+	int depthfake=0;
+	struct Symbol_node*insert_node=create_symbolnode(FUNCTION_NAME,functiontype,funcname,ifdef,depthfake);
+	insert_symbol2(insert_node,global_scope);
+
+	//		struct Symbol_node*insert_node=create_symbolnode(FUNCTION_NAME,functiontype,funcname,ifdef,depth_);
+
+}
+
+void create_read(){
+	//int read();
+	char*funcname=(char*)malloc(sizeof(char*)*32);
+	strcpy(funcname,"read");
+	//funcname结束
+	Type functiontype=(Type)(malloc(sizeof(struct Type_)));
+
+	Type returntype=(Type)(malloc(sizeof(struct Type_)));
+	returntype->kind=BASIC;
+	returntype->u.basic=0;
+
+	functiontype->kind=FUNCTION;
+	functiontype->u.function.paramnums=0;
+	functiontype->u.function.returnparam=returntype;
+	functiontype->u.function.params=NULL;
+
+	int ifdef=1;
+	int depthfake=0;
+	struct Symbol_node*insert_node=create_symbolnode(FUNCTION_NAME,functiontype,funcname,ifdef,depthfake);
+	insert_symbol2(insert_node,global_scope);
+
+}
+
+
 int Program_s(struct Node* cur){
 	// 一些init工作;
 	global_scope=init_symboltable();
 	struct Node* ExtDefListnode=getchild(cur,0);
 	ExtDefList_s(ExtDefListnode);
 	check_function_def();
-//	show_global_table();
+	//实验三 需要在符号表里面实现插入read,write;
+	create_write();
+	create_read();
+	show_global_table();
 	return 0;
 }
 int ExtDefList_s(struct Node* cur){
@@ -305,6 +363,7 @@ DecList -> Dec
 	struct Node*declistnode=getchild(cur,1);
 	//printf("in def2\n");
 	Type type=Specifier_s(specifiernode);
+	if(type==NULL)return 0;
 	// if(type==NULL)
 	DecList_s(declistnode,scope,type);
 	return 0;
@@ -1047,7 +1106,7 @@ Type Specifier_s(struct Node*cur){
 			int tempreuslt=query_symbol_exist(&temptype,tempname,&tempdef,depth_);//不太确定;
 			//printf("out of query:%d\n",tempreuslt);
 			if(tempreuslt!=0){
-		//		printf("tempresult:1\n");
+				printf("tempresult:1\n");
 				error_s(17,ID_node->column,tempname,NULL);
 				return NULL;
 			}else if (temptype==NULL||temptype->kind!=STRUCTURE){

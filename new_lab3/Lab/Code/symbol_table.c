@@ -86,6 +86,7 @@ struct Symbol_bucket* init_symboltable(){
 	return scope_head;
 }
 struct Symbol_bucket*enter_scope(){
+	return scope_head;
 	struct Symbol_bucket *result=malloc(sizeof(struct Symbol_bucket));
 	result->next=NULL;
 	result->head=NULL;
@@ -97,7 +98,7 @@ struct Symbol_bucket*enter_scope(){
 	return result;
 }
 struct Symbol_bucket* exit_scope(){
-
+	return scope_head;
 	struct Symbol_bucket*tail=scope_head;
 	struct Symbol_bucket* tailbefore=scope_head;
 	while(tail->next!=NULL){
@@ -189,6 +190,7 @@ void show_global_table(){
 			printf("i:%d ",i);
 			struct Symbol_node*temp=global_head[i].head;
 			while(temp!=NULL){
+				//	printf("name:%s",temp->field.name);
 					printf("name:%s type:%d ,",temp->field.name,temp->field.type->kind);
 					temp=temp->lnext;
 			}
