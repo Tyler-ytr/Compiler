@@ -1,8 +1,0 @@
-int safe_add(int lhs_add, int rhs_add) {
-  if((((lhs_add>0) && (rhs_add>0) && (lhs_add > (2147483647-rhs_add))) || ((lhs_add<0) && (rhs_add<0) && (lhs_add < (-2147483648-rhs_add))))) { return lhs_add; }
-  return lhs_add + rhs_add;
-}
-int main(){
-
-safe_add(1,2);
-}
