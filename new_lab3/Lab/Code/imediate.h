@@ -14,7 +14,8 @@ struct Operand_{
 			OP_VARIABLE,
 			OP_CONSTANT,
 			OP_FUNCTION,
-			OP_TEMPVAR
+			OP_TEMPVAR,
+			OP_LABEL
 			//To be done
 		}kind;
 	enum{
@@ -35,13 +36,19 @@ struct InterCode{
 		//单目
 		IN_FUNCTION,
 		IN_PARAM,
-		
+		IN_RETURN,
+		IN_LABEL,
+		IN_GOTO,
 		//双目
 		IN_ASSIGN,
 		IN_DEC,
 		IN_ADD,
 		IN_SUB,
-		IN_MUL
+		IN_MUL,
+		IN_DIV,
+
+		//四目
+		IN_IFGOTO
 	}kind;
 
 	union{
@@ -58,7 +65,12 @@ struct InterCode{
 			Operand op1;
 			Operand op2;
 		}three;
-
+		struct {//实际上是op1,relop1,op2,op3
+			Operand op1;
+			Operand op2;
+			Operand op3;
+			char*relop;
+		}four;
 
 		//To be done
 	}u;
@@ -83,4 +95,7 @@ int Dec_g(struct Node*cur);
 Operand VarDec_g(struct Node*cur);
 Operand Exp_g(struct Node*cur);
 int Stmt_g(struct Node* cur);
+
+int Cond_g(struct Node* cur,Operand label_true,Operand label_false);
+
 #endif

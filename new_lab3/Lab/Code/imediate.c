@@ -50,12 +50,53 @@ Operand new_op(int kind,int ifaddress,...){
 			op->u.value=va_arg(args,int);
 			break;
 		}
-
-
+		case OP_LABEL:{
+			op->u.no=label_cnt++;
+			break;
+		}
+		case OP_TEMPVAR:{
+			op->u.no=temp_cnt++;
+			break;
+		}
 		default:
+			printf("New op to be done\n");
+			assert(0);
 			break;
 	}
 
+}
+char *Reverse_relop(char*relop){
+	//进行符号的反转比如> 变成<= 用于iffalse的翻译;
+	//RELOP -> > | < | >= | <= | == | !=
+	char*result=NULL;
+	if(strcheck(relop,">")){
+		result="<=";
+	}else if(strcheck(relop,"<")){
+		result=">=";
+	}else if(strcheck(relop,">=")){
+		result="<";
+	}else if(strcheck(relop,"<=")){
+		result=">";
+	}else if(strcheck(relop,"==")){
+		result="!=";
+	}else if(strcheck(relop,"!=")){
+		result="==";
+	}
+	return result;
+}
+int arithmetic_kind(char*cur){//将char类型的四则运算转换成Intercode里面的kind;
+	//int result=0;
+	if(strcheck(cur,"PLUS")){
+		return IN_ADD;
+	}else if(strcheck(cur,"MINUS")){
+		return IN_SUB;
+	}else if(strcheck(cur,"STAR")){
+		return IN_MUL;
+	}else if(strcheck(cur,"DIV")){
+		return IN_DIV;
+	}
+	printf("arithmetic_kind error\n");
+	assert(0);
 }
 // Operand new_temp(){
 // 	//新建一个variable的OP,名字是t#
@@ -90,6 +131,9 @@ void new_intercode(int kind,...){
 		//单目
 		case IN_FUNCTION:
 		case IN_PARAM:
+		case IN_RETURN:
+		case IN_LABEL:
+		case IN_GOTO:
 			tempcode->code.u.one.op0=va_arg(args, Operand);
 			break;
 		//双目
@@ -101,11 +145,24 @@ void new_intercode(int kind,...){
 			break;
 
 
-		//三目
-
-
-
+		//三目 result=op1+op2
+		case IN_ADD:
+		case IN_SUB:
+		case IN_MUL:
+		case IN_DIV:
+			tempcode->code.u.three.result=va_arg(args,Operand);
+			tempcode->code.u.three.op1=va_arg(args,Operand);
+			tempcode->code.u.three.op2=va_arg(args,Operand);
+		//四目
+		case IN_IFGOTO://  (if)op1,relop,op2,(goto)op3
+			tempcode->code.u.four.op1=va_arg(args,Operand);
+			tempcode->code.u.four.relop=va_arg(args,char*);
+			tempcode->code.u.four.op2=va_arg(args,Operand);
+			tempcode->code.u.four.op3=va_arg(args,Operand);
+			break;
 		default:
+			printf("new_intercode to be done!\n");
+			assert(0);
 		break;
 
 	}
@@ -323,8 +380,42 @@ int Stmt_g(struct Node* cur){
 	| IF LP Exp RP Stmt ELSE Stmt
 	| WHILE LP Exp RP Stmt
 	*/
-	
+	struct Node*tempnode1=getchild(cur,0);
+	if(strcheck(tempnode1->name,"CompSt")){
+		CompSt_g(tempnode1);
+	}else if(strcheck(tempnode1->name,"Exp")){
+		Exp_g(tempnode1);
+	}else if (strcheck(tempnode1->name,"RETURN")){
+		struct Node*expnode=getchild(cur,1);
+		Operand expop=Exp_g(expnode);
+		new_intercode(IN_RETURN,expop);
+	}else if(strcheck(tempnode1->name,"WHILE")){
+		//感觉可以优化;
+		//label4:
+		//if cond goto label5(true label)
+		//goto label6 (false label)
+		//label5:...
+		//goto label4
+		//label 6:...
+		//等价于 
+		//label4:
+		//if !cond goto label6(false label)
+		// ....(true contant)
+		//goto label4
+		//label 6:
+		//...
+		//参考课本6.6.5 避免冗余的goto指令部分;
+		Operand label1=new_op(OP_LABEL,OP_VAR);//while上面地label用来指示循环地;
+		Operand label2=new_op(OP_LABEL,OP_VAR);//false label
+		//Operand label3=new_op(OP_LABEL,OP_VAR);
+		new_intercode(IN_LABEL,label1);
+		struct Node* expnode=getchild(cur,2);
+		Cond_g(expnode,NULL,label2);
+		//"类似地,if-else 和while 语句地规则也将B.true设置为fall";
+
+	}
 }
+
 
 int Def_g(struct Node*cur){
 	/*	Def -> Specifier DecList SEMI*/
@@ -445,10 +536,181 @@ Operand Exp_g(struct Node*cur){
 	return temp;
 }
 
+//这里的cur应该是exp;
+int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
+	//参考编译原理课本6.6.5 p261 避免冗余的goto指令部分,进行优化;
+	//我觉得原始的思想如我在while中写的部分
+	///////////
+	//感觉可以优化;
+	//label4:
+	//if cond goto label5(true label)
+	//goto label6 (false label)
+	//label5:...
+	//goto label4
+	//label 6:...
+	//等价于 
+	//label4:
+	//if !cond goto label6(false label)
+	// ....(true contant)
+	//goto label4
+	//label 6:
+	//...	
+	//////////
+	/*Exp -> Exp ASSIGNOP Exp3 ok
+	| Exp AND Exp3 ok 
+	| Exp OR Exp3 ok
+	| Exp RELOP Exp3 ok
+ 	| Exp PLUS Exp3 ok
+	| Exp MINUS Exp3 ok
+	| Exp STAR Exp3 ok
+	| Exp DIV Exp3 ok
 
+	| LP Exp RP3  ok
+	| MINUS Exp 2 ok
+	| NOT Exp 2 ok
 
+	| ID LP Args RP 4函数
+	| ID LP RP 3
 
+	| Exp LB Exp RB4 数组
+	| Exp DOT ID3 结构体;
 
+	| ID1 ok
+	| INT1 ok
+	| FLOAT1 ok
+	*/
+	//////////
+	//NULL 表示课本中的fall
+	//#0:
+	Operand zero=new_op(OP_CONSTANT,OP_VAR,0);
+
+	if(cur==NULL){;}
+	else{
+		struct Node*tempnode1=getchild(cur,0);
+		if(strcheck(tempnode1->name,"Exp")){
+			;//To be done
+			struct Node* tempnode2=getchild(cur,1);
+			if(strcheck(tempnode2->name,"ASSIGNOP")){
+				//IF(A=B)..
+				//实际上是赋值玩意儿;不是0都去true否则去false;
+				Operand op1=Exp_g(tempnode1);
+				struct Node*tempnode3=getchild(cur,2);
+				Operand op2=Exp_g(tempnode3);
+				new_intercode(IN_ASSIGN,op1,op2);//op1=op2
+				if(label_true!=NULL){
+					new_intercode(IN_IFGOTO,op1,"!=",zero,label_true);//if(a!=0){...}
+				}
+				if(label_false!=NULL){
+					new_intercode(IN_IFGOTO,op1,"==",zero,label_false);//if(a!=0){...}else{...} 因此如果a==0那就去else;
+				}
+
+			}else if(strcheck(tempnode2->name,"AND")){;
+				Cond_g(tempnode1,NULL,label_false);
+				struct Node*tempnode3=getchild(cur,2);
+				Cond_g(tempnode3,label_true,label_false);		
+				//可能需要修改;需要测试!		
+			}else if(strcheck(tempnode2->name,"OR")){
+				//6-40 
+				Cond_g(tempnode1,label_true,NULL);
+				struct Node*tempnode3=getchild(cur,2);
+				Cond_g(tempnode3,label_true,label_false);
+				//可能需要修改;
+			}else if(strcheck(tempnode2->name,"RELOP")){
+				Operand op1=Exp_g(tempnode1);
+				struct Node*tempnode3=getchild(cur,2);
+				Operand op2=Exp_g(tempnode3);
+				if(label_true!=NULL&&label_false!=NULL){
+					new_intercode(IN_IFGOTO,op1,tempnode2->string_contant,op2,label_true);
+					new_intercode(IN_GOTO,label_false);
+				}else if(label_true!=NULL){
+					new_intercode(IN_IFGOTO,op1,tempnode2->string_contant,op2,label_true);					
+				}else if(label_false!=NULL){
+					new_intercode(IN_IFGOTO,op1,Reverse_relop(tempnode2->string_contant),op2,label_false);
+				}
+
+			}else if(strcheck(tempnode2->name,"PLUS")||strcheck(tempnode2->name,"DIV")||strcheck(tempnode2->name,"STAR")||strcheck(tempnode2->name,"MINUS")){
+				Operand op1=Exp_g(tempnode1);
+				struct Node* tempnode3=getchild(cur,2);
+				Operand op2=Exp_g(tempnode3);
+				int in_kind=arithmetic_kind(tempnode2->string_contant);
+				Operand result=new_op(OP_TEMPVAR,OP_VAR);
+				new_intercode(in_kind,result,op1,op2);
+
+				if(label_true!=NULL){
+					new_intercode(IN_IFGOTO,result,"!=",zero,label_true);
+				}
+				if(label_false!=NULL){
+					new_intercode(IN_IFGOTO,result,"==",zero,label_false);
+				}
+			}else if(strcheck(tempnode2->name,"LB")){
+				Operand op=Exp_g(cur);
+				if(label_true!=NULL){
+					new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
+				}
+				if(label_false!=NULL){
+					new_intercode(IN_IFGOTO,op,"==",zero,label_false);
+				}
+
+			}else if(strcheck(tempnode2->name,"DOT")){
+				Operand op=Exp_g(cur);
+				if(label_true!=NULL){
+					new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
+				}
+				if(label_false!=NULL){
+					new_intercode(IN_IFGOTO,op,"==",zero,label_false);
+				}
+			}
+
+		}else if(strcheck(tempnode1->name,"NOT")){
+			struct Node*expnode=getchild(cur,1);
+			Cond_g(expnode,label_true,label_false);
+		}else if(strcheck(tempnode1->name,"MINUS")){
+			
+			//printf("cond Minus\n");
+			//不确定可不可以优化
+			//没有优化的版本:
+			Operand op=Exp_g(cur);
+			if(label_true!=NULL){
+				new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
+			}
+			if(label_false!=NULL){
+				new_intercode(IN_IFGOTO,op,"==",zero,label_false);
+			}
+		}else if(strcheck(tempnode1->name,"LP")){
+			;//LP Exp RP
+			//printf("cond LP\n");
+			struct Node*expnode=getchild(cur,1);
+			Cond_g(expnode,label_true,label_false);
+		}else if(strcheck(tempnode1->name,"ID")){
+			;//To be done
+			printf("cond ID\n");
+			Operand op=Exp_g(cur);
+			if(label_true!=NULL){
+				new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
+			}
+			if(label_false!=NULL){
+				new_intercode(IN_IFGOTO,op,"==",zero,label_false);
+			}
+
+		}else if(strcheck(tempnode1->name,"INT")){
+			;//To be done
+			//printf("cond INT\n");
+			//如果>0 那么就去true 否则去false
+			if(label_true!=NULL&&tempnode1->int_contant){
+				new_intercode(IN_GOTO,label_true);
+			}
+			if(label_false!=NULL&&!tempnode1->int_contant){
+				new_intercode(IN_GOTO,label_false);
+			}
+		}else if(strcheck(tempnode1->name,"FLOAT")){
+			;//Impossible;
+		}
+	}
+	
+	
+	
+	return 0;
+}
 
 
 
