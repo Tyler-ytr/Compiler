@@ -109,11 +109,14 @@ int Program_s(struct Node* cur){
 	// 一些init工作;
 	global_scope=init_symboltable();
 	struct Node* ExtDefListnode=getchild(cur,0);
-	ExtDefList_s(ExtDefListnode);
-	check_function_def();
-	//实验三 需要在符号表里面实现插入read,write;
+		//实验三 需要在符号表里面实现插入read,write;
 	create_write();
 	create_read();
+
+	ExtDefList_s(ExtDefListnode);
+	check_function_def();
+
+
 	show_global_table();
 	return 0;
 }
@@ -652,6 +655,7 @@ Type Exp_s(struct Node*cur){
 			}
 
 			if(queryresult==-1){//没找到或者不是定义;  感觉声明了也可以用,比如gcc
+	//			printf("able:%d\n",result);
 				error_s(2,cur->column,funcname,NULL);
 				return NULL;
 			}

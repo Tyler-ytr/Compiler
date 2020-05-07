@@ -439,6 +439,36 @@ int query_symbol(Type* type,char*name,int*ifdef,int depth){//存在 return 0,不
 		}
 	}
 }
+struct Symbol_node *query_symbol2( char*name,int*success){
+	//仅仅用于lab3,不考虑depth;
+	int value=hash_name(name);
+	//struct Symbol_node gg;
+	if(global_head[value].head==NULL){
+		*success=0;
+		return NULL;//没有命名,
+	}else{
+		struct Symbol_node*temp=global_head[value].head;
+		int flag=0;
+		while(temp!=NULL){
+			if(strcmp(temp->field.name,name)==0){//在同一层才算被找到,否则不算;
+			//	printf("able:%d\n",temp->type->kind);
+				//gg=*temp;
+				flag=1;
+				*success=1;
+				return temp;
+			}
+			temp=temp->lnext;
+			if(temp==NULL){
+				break;
+			}
+		}
+		if(flag==0){
+		//	printf("OMG2!!!!!!!We don't have this symbol!!");
+			*success=0;
+			return NULL;//没有找到
+		}
+	}
+}
 int query_symbol_exist(Type* type,char*name,int*ifdef,int depth){
 		int value=hash_name(name);
 //	printf("In query%s\n",name);
