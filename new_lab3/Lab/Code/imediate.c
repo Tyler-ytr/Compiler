@@ -600,16 +600,16 @@ Operand VarDec_g(struct Node*cur){
 }
 
 Operand Exp_g(struct Node*cur){
-	/*Exp -> Exp ASSIGNOP Exp3 
+	/*Exp -> Exp ASSIGNOP Exp3 ok
 
 	| Exp AND Exp3 ok
 	| Exp OR Exp3 ok
 	| Exp RELOP Exp3 ok
 
- 	| Exp PLUS Exp3 
-	| Exp MINUS Exp3 
-	| Exp STAR Exp3 
-	| Exp DIV Exp3 
+ 	| Exp PLUS Exp3 ok
+	| Exp MINUS Exp3 ok
+	| Exp STAR Exp3 ok 
+	| Exp DIV Exp3 ok 
 
 	| LP Exp RP3  ok
 	| MINUS Exp 2 ok
@@ -629,7 +629,7 @@ Operand Exp_g(struct Node*cur){
 	struct Node*tempnode1=getchild(cur,0);
 	if(strcheck(tempnode1->name,"ID")){
 		//To be done!!!;
-
+		//所有vairable注册的时候都要添加到一个list里面便于这个时候查找;
 	}else if(strcheck(tempnode1->name,"INT")){
 		temp=new_op(OP_CONSTANT,OP_VAR,tempnode1->int_contant);
 		return temp;
@@ -672,7 +672,36 @@ Operand Exp_g(struct Node*cur){
 		return temp;
 
 	}else if(strcheck(tempnode1->name,"Exp")){
-		;
+		struct Node*tempnode2=getchild(cur,1);
+		if(
+				(strcheck(tempnode2->name,"PLUS"))||
+				(strcheck(tempnode2->name,"MINUS"))||
+				(strcheck(tempnode2->name,"STAR"))||
+				(strcheck(tempnode2->name,"DIV"))
+			){
+				int in_kind=arithmetic_kind(tempnode2->name);
+				temp=new_op(OP_TEMPVAR,OP_VAR);
+				struct Node*expnode1=tempnode1;
+				struct Node*expnode2=getchild(cur,2);
+				Operand op1=Exp_g(expnode1);
+				Operand op2=Exp_g(expnode2);
+				new_intercode(in_kind,temp,op1,op2);
+				return temp;
+			}
+		else if(strcheck(tempnode2->name,"ASSIGNOP")){
+			//	temp=new_op(OP_TEMPVAR,OP_VAR);
+				struct Node*expnode1=tempnode1;
+				struct Node*expnode2=getchild(cur,2);
+				Operand op1=Exp_g(expnode1);
+				Operand op2=Exp_g(expnode2);
+				new_intercode(IN_ASSIGN,op1,op2);
+				temp=op1;
+				return temp;
+		}
+		
+		
+
+
 	}
 
 	return temp;
