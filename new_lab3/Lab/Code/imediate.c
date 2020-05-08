@@ -181,29 +181,70 @@ void new_intercode(int kind,...){
 // }
 
 
+int gettypesize(Type cur){
+	//如果是int返回4,如果是结构体那么返回结构体大小;
+//	printf("herer\n");
+	if(cur->kind==BASIC){
+		return 4;
+	}else if(cur->kind==STRUCTURE){
+		//从上到下得到每一个元素的大小然后相加;
+		int result=0;
+		FieldList temp=cur->u.structure_.structure;
+		// printf("tempname1:%s\n",cur->u.structure_.name);
+		// Type cur2=temp->type;
+		// printf("tempname2:%d\n",cur2->kind);
+		// Type cur3=temp->tail->type;
+		// printf("tempname3:%d\n",cur3->kind);
+		while(temp!=NULL){
+			Type temptype=temp->type;
+			int tempsize=gettypesize(temptype);
+			result+=tempsize;
+			//printf("tempsize:%d\n",tempsize);
+			temp=temp->tail;
+		}
+	//	printf("result:%d\n",result);
+		return result;
 
+	}else if(cur->kind==ARRAY){
+		//对于struct TEMP a[3][4][5],因为遍历顺序是3-4-5-TEMP,先找到TEMP的大小然后再相乘就行;
+		int mulresult=1;
+		Type type=cur;
+		while(type!=NULL){
+			if(type->kind!=ARRAY)break;
+			mulresult*=type->u.array_.size;
+			type=type->u.array_.elem;
+		}
+		int typesize=gettypesize(type);
+		mulresult*=typesize;
+		//printf("mulresult:%d\n",mulresult);
+		return mulresult;
 
-int getarraysize(struct Symbol_node* cur){
-	//根据传入的数组元素得到size的大小;
-	//printf("In getarraysize\n");
-	int result=1;
-	if(cur->field.type->kind!=ARRAY){
-		assert(0);
 	}
-	Type type=cur->field.type;
-	//a[3][4][5]  3->4->5->int
-	//printf("size1:%d\n",type->u.array_.size);
-	while(type!=NULL){
-		if(type->kind!=ARRAY)break;
-		result*=type->u.array_.size;
-		//printf("size:%d\n",type->u.array_.size);
-		type=type->u.array_.elem;
-	}
-	result*=4;
-	//printf("result:%d\n",result);
-
-	return result;
 }
+
+// int getarraysize(struct Symbol_node* cur){
+// 	//根据传入的数组元素得到size的大小;
+// 	//printf("In getarraysize\n");
+// 	int result=1;
+// 	if(cur->field.type->kind!=ARRAY){
+// 		assert(0);
+// 	}
+// 	Type type=cur->field.type;
+// 	//a[3][4][5]  3->4->5->int
+// 	//printf("size1:%d\n",type->u.array_.size);
+// 	while(type!=NULL){
+// 		if(type->kind!=ARRAY)break;
+// 		result*=type->u.array_.size;
+// 		//printf("size:%d\n",type->u.array_.size);
+// 		type=type->u.array_.elem;
+// 	}
+// 	result*=4;
+// 	//需要修改哦 如果是结构体咋整.jpg
+// 	//printf("result:%d\n",result);
+
+// 	return result;
+// }
+
 
 
 
@@ -373,12 +414,12 @@ int StmtList_g(struct Node*cur){
 
 int Stmt_g(struct Node* cur){
 	/*
-	Stmt -> Exp SEMI
-	| CompSt
-	| RETURN Exp SEMI
-	| IF LP Exp RP Stmt
-	| IF LP Exp RP Stmt ELSE Stmt
-	| WHILE LP Exp RP Stmt
+	Stmt -> Exp SEMI ok
+	| CompSt ok
+	| RETURN Exp SEMI ok
+	| IF LP Exp RP Stmt ok
+	| IF LP Exp RP Stmt ELSE Stmt ok
+	| WHILE LP Exp RP Stmt ok
 	*/
 	struct Node*tempnode1=getchild(cur,0);
 	if(strcheck(tempnode1->name,"CompSt")){
@@ -412,6 +453,46 @@ int Stmt_g(struct Node* cur){
 		struct Node* expnode=getchild(cur,2);
 		Cond_g(expnode,NULL,label2);
 		//"类似地,if-else 和while 语句地规则也将B.true设置为fall";
+		struct Node*stmtnode=getchild(cur,4);
+		if(strcheck(stmtnode->name,"Stmt")!=1){
+			printf("while error\n");
+			assert(0);
+		}
+		Stmt_g(stmtnode);
+		new_intercode(IN_GOTO,label1);
+		new_intercode(IN_LABEL,label2);
+		
+	}else if(strcheck(tempnode1->name,"IF")){
+		Operand label1=new_op(OP_LABEL,OP_VAR);//false label
+		//和while一样省略true label;
+		//if !cond goto false label
+		// stmt
+		//false label:
+		//IF LP Exp RP Stmt
+		//IF LP Exp RP Stmt ELSE Stmt
+		struct Node* expnode=getchild(cur,2);
+		Cond_g(expnode,NULL,label1);
+		struct Node* stmtnode=getchild(cur,4);
+		Stmt_g(stmtnode);
+		struct Node* tempnode6=getchild(cur,5);
+		if(tempnode6==NULL){
+			new_intercode(IN_LABEL,label1);
+		}else{
+			Operand label2=new_op(OP_LABEL,OP_VAR);
+			//if !cond goto false label
+			//stmt
+			//goto label2 也就是跳出if else
+			//false label:
+			//else 对应的stmt
+			//
+			//label 2:
+			//
+			new_intercode(IN_GOTO,label2);
+			new_intercode(IN_LABEL,label1);
+			struct Node*stmtnode2=getchild(cur,6);
+			Stmt_g(stmtnode2);
+			new_intercode(IN_LABEL, label2);
+		}
 
 	}
 }
@@ -479,7 +560,17 @@ Operand VarDec_g(struct Node*cur){
 	struct Node*tempnode=getchild(cur,0);
 	if(strcheck(tempnode->name,"ID")){
 		//单个变量,不是数组;
+		int query_success=0;
+		struct Symbol_node* queryid=query_symbol2(tempnode->string_contant,&query_success);
+		int typesize=gettypesize(queryid->field.type);
 		result=new_op(OP_VARIABLE,OP_VAR,tempnode->string_contant);
+		if(typesize==4){
+			;//int 不用管;
+		}else{
+			;//struct 申请空间;
+			Operand op2=new_op(OP_CONSTANT,OP_VAR,typesize);
+			new_intercode(IN_DEC,result,op2);
+		}
 	}else{
 		
 		struct Node*findnode=getchild(tempnode,0);
@@ -496,7 +587,7 @@ Operand VarDec_g(struct Node*cur){
 		}
 		result=new_op(OP_VARIABLE,OP_VAR,findnode->string_contant);
 		
-		int arraysize=getarraysize(queryid);
+		int arraysize=gettypesize(queryid->field.type);
 		Operand op2=new_op(OP_CONSTANT,OP_VAR,arraysize);
 		new_intercode(IN_DEC,result,op2);
 
@@ -509,14 +600,16 @@ Operand VarDec_g(struct Node*cur){
 }
 
 Operand Exp_g(struct Node*cur){
-		/*Exp -> Exp ASSIGNOP Exp3 ok
-	| Exp AND Exp3 ok 
+	/*Exp -> Exp ASSIGNOP Exp3 
+
+	| Exp AND Exp3 ok
 	| Exp OR Exp3 ok
 	| Exp RELOP Exp3 ok
- 	| Exp PLUS Exp3 ok
-	| Exp MINUS Exp3 ok
-	| Exp STAR Exp3 ok
-	| Exp DIV Exp3 ok
+
+ 	| Exp PLUS Exp3 
+	| Exp MINUS Exp3 
+	| Exp STAR Exp3 
+	| Exp DIV Exp3 
 
 	| LP Exp RP3  ok
 	| MINUS Exp 2 ok
@@ -528,11 +621,60 @@ Operand Exp_g(struct Node*cur){
 	| Exp LB Exp RB4 数组
 	| Exp DOT ID3 结构体;
 
-	| ID1 ok
+	| ID1 
 	| INT1 ok
 	| FLOAT1 ok
 	*/
 	Operand temp=NULL;
+	struct Node*tempnode1=getchild(cur,0);
+	if(strcheck(tempnode1->name,"ID")){
+		//To be done!!!;
+
+	}else if(strcheck(tempnode1->name,"INT")){
+		temp=new_op(OP_CONSTANT,OP_VAR,tempnode1->int_contant);
+		return temp;
+
+	}else if(strcheck(tempnode1->name,"FLOAT")){
+		//理论上不应该出现;如果出现那就标作常数0吧!!
+		temp=new_op(OP_CONSTANT,OP_VAR,0);
+		return temp;	
+		
+	}else if(strcheck(tempnode1->name,"LP")){
+		struct Node*expnode=getchild(cur,1);
+		return Exp_g(expnode);
+	}else if(strcheck(tempnode1->name,"MINUS")){
+		//zero 就是#0
+		//op1是处理的exp部分;
+		//t1=#0-op1;return t1;
+		Operand zero=new_op(OP_CONSTANT,OP_VAR,0);
+		struct Node*expnode=getchild(cur,1);
+		Operand op1=Exp_g(expnode);
+		Operand op2=new_op(OP_TEMPVAR,OP_VAR);
+		new_intercode(IN_SUB,op2,zero,op1);//op2=zero-op1;
+		temp=op2;
+		return temp;
+	}else if(strcheck(tempnode1->name,"NOT")||
+		(strcheck(tempnode1->name,"Exp")&&tempnode1->next_sib!=NULL&&strcheck(tempnode1->next_sib->name,"RELOP"))||
+		(strcheck(tempnode1->name,"Exp")&&tempnode1->next_sib!=NULL&&strcheck(tempnode1->next_sib->name,"AND"))||
+		(strcheck(tempnode1->name,"Exp")&&tempnode1->next_sib!=NULL&&strcheck(tempnode1->next_sib->name,"OR"))
+	){
+		//来自讲义,尽管我觉得需要优化;
+		Operand label1=new_op(OP_LABEL,OP_VAR);
+		Operand label2=new_op(OP_LABEL,OP_VAR);
+		temp=new_op(OP_TEMPVAR,OP_VAR);
+		Operand zero=new_op(OP_CONSTANT,OP_VAR,0);
+		new_intercode(IN_ASSIGN,temp,zero);
+		Cond_g(cur,label1,label2);
+		new_intercode(IN_LABEL,label1);
+		Operand one=new_op(OP_CONSTANT,OP_VAR,1);
+		new_intercode(IN_ASSIGN,temp,one);
+		new_intercode(IN_LABEL,label2);
+		return temp;
+
+	}else if(strcheck(tempnode1->name,"Exp")){
+		;
+	}
+
 	return temp;
 }
 
@@ -597,23 +739,40 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 				struct Node*tempnode3=getchild(cur,2);
 				Operand op2=Exp_g(tempnode3);
 				new_intercode(IN_ASSIGN,op1,op2);//op1=op2
-				if(label_true!=NULL){
+				if(label_true!=NULL&&label_false!=NULL){
+					new_intercode(IN_IFGOTO,op1,"!=",zero,label_true);
+					new_intercode(IN_GOTO,label_false);
+				}else if(label_true!=NULL){
 					new_intercode(IN_IFGOTO,op1,"!=",zero,label_true);//if(a!=0){...}
-				}
-				if(label_false!=NULL){
+				}else if(label_false!=NULL){
 					new_intercode(IN_IFGOTO,op1,"==",zero,label_false);//if(a!=0){...}else{...} 因此如果a==0那就去else;
 				}
 
-			}else if(strcheck(tempnode2->name,"AND")){;
-				Cond_g(tempnode1,NULL,label_false);
-				struct Node*tempnode3=getchild(cur,2);
-				Cond_g(tempnode3,label_true,label_false);		
-				//可能需要修改;需要测试!		
+			}else if(strcheck(tempnode2->name,"AND")){
+				if(label_false!=NULL){
+					Cond_g(tempnode1,NULL,label_false);
+					struct Node*tempnode3=getchild(cur,2);
+					Cond_g(tempnode3,label_true,label_false);		
+				}else{
+					Operand new_label=new_op(OP_LABEL,OP_VAR);
+					Cond_g(tempnode1,NULL,new_label);
+					struct Node*tempnode3=getchild(cur,2);
+					Cond_g(tempnode3,label_true,label_false);
+					new_intercode(IN_LABEL,new_label);
+				}				//可能需要修改;需要测试!		
 			}else if(strcheck(tempnode2->name,"OR")){
 				//6-40 
-				Cond_g(tempnode1,label_true,NULL);
-				struct Node*tempnode3=getchild(cur,2);
-				Cond_g(tempnode3,label_true,label_false);
+				if(label_true!=NULL){
+					Cond_g(tempnode1,label_true,NULL);
+					struct Node*tempnode3=getchild(cur,2);
+					Cond_g(tempnode3,label_true,label_false);
+				}else{
+					Operand new_label=new_op(OP_LABEL,OP_VAR);
+					Cond_g(tempnode1,new_label,NULL);
+					struct Node*tempnode3=getchild(cur,2);
+					Cond_g(tempnode3,label_true,label_false);
+					new_intercode(IN_LABEL,new_label);			
+				}
 				//可能需要修改;
 			}else if(strcheck(tempnode2->name,"RELOP")){
 				Operand op1=Exp_g(tempnode1);
@@ -635,28 +794,35 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 				int in_kind=arithmetic_kind(tempnode2->string_contant);
 				Operand result=new_op(OP_TEMPVAR,OP_VAR);
 				new_intercode(in_kind,result,op1,op2);
-
-				if(label_true!=NULL){
+				if(label_true!=NULL&&label_false!=NULL){
+					new_intercode(IN_IFGOTO,result,"!=",zero,label_true);
+					new_intercode(IN_GOTO,label_false);
+				}
+				else if(label_true!=NULL){
 					new_intercode(IN_IFGOTO,result,"!=",zero,label_true);
 				}
-				if(label_false!=NULL){
+				else if(label_false!=NULL){
 					new_intercode(IN_IFGOTO,result,"==",zero,label_false);
 				}
 			}else if(strcheck(tempnode2->name,"LB")){
 				Operand op=Exp_g(cur);
-				if(label_true!=NULL){
+				if(label_true!=NULL&&label_false!=NULL){
 					new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
-				}
-				if(label_false!=NULL){
+					new_intercode(IN_GOTO,label_false);
+				}else if(label_true!=NULL){
+					new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
+				}else if(label_false!=NULL){
 					new_intercode(IN_IFGOTO,op,"==",zero,label_false);
 				}
 
 			}else if(strcheck(tempnode2->name,"DOT")){
 				Operand op=Exp_g(cur);
-				if(label_true!=NULL){
+				if(label_true!=NULL&&label_false!=NULL){
 					new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
-				}
-				if(label_false!=NULL){
+					new_intercode(IN_GOTO,label_false);
+				}else if(label_true!=NULL){
+					new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
+				}else if(label_false!=NULL){
 					new_intercode(IN_IFGOTO,op,"==",zero,label_false);
 				}
 			}
@@ -670,10 +836,12 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 			//不确定可不可以优化
 			//没有优化的版本:
 			Operand op=Exp_g(cur);
-			if(label_true!=NULL){
+			if(label_true!=NULL&&label_false!=NULL){
 				new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
-			}
-			if(label_false!=NULL){
+				new_intercode(IN_GOTO,label_false);
+			}else if(label_true!=NULL){
+				new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
+			}else if(label_false!=NULL){
 				new_intercode(IN_IFGOTO,op,"==",zero,label_false);
 			}
 		}else if(strcheck(tempnode1->name,"LP")){
@@ -683,12 +851,14 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 			Cond_g(expnode,label_true,label_false);
 		}else if(strcheck(tempnode1->name,"ID")){
 			;//To be done
-			printf("cond ID\n");
+		//	printf("cond ID\n");
 			Operand op=Exp_g(cur);
-			if(label_true!=NULL){
+			if(label_true!=NULL&&label_false!=NULL){
 				new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
-			}
-			if(label_false!=NULL){
+				new_intercode(IN_GOTO,label_false);
+			}else if(label_true!=NULL){
+				new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
+			}else if(label_false!=NULL){
 				new_intercode(IN_IFGOTO,op,"==",zero,label_false);
 			}
 
@@ -696,6 +866,7 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 			;//To be done
 			//printf("cond INT\n");
 			//如果>0 那么就去true 否则去false
+			//不是很确定;
 			if(label_true!=NULL&&tempnode1->int_contant){
 				new_intercode(IN_GOTO,label_true);
 			}
