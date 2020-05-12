@@ -31,31 +31,37 @@ void add_inter(struct Intercodes* now){
 }
 Operand new_op(int kind,int ifaddress,...){
 	va_list args;
-	va_start(	args,ifaddress);
+	va_start(args,ifaddress);
 	Operand op=(Operand)(malloc(sizeof(struct Operand_)));
 	op->kind=kind;
 	op->ifaddress=ifaddress;
 	switch(kind){
 		case OP_VARIABLE:{
 			//char
-			op->u.varname=va_arg(args,char*);
-			op->u.no=var_cnt++;
+		//	char* temp=va_arg(args,char*);
+			 op->varname=va_arg(args,char*);
+			 op->no=var_cnt++;
+			// if(op->u.varname!=NULL){
+			printf("var : %s\n ",op->varname);			
+			// }else{
+			// 	printf("erer\n");
+			// }
 			break;
 		}
 		case OP_FUNCTION:{
-			op->u.funcname=va_arg(args,char*);
+			op->funcname=va_arg(args,char*);
 			break;
 		}
 		case OP_CONSTANT:{
-			op->u.value=va_arg(args,int);
+			op->value=va_arg(args,int);
 			break;
 		}
 		case OP_LABEL:{
-			op->u.no=label_cnt++;
+			op->no=label_cnt++;
 			break;
 		}
 		case OP_TEMPVAR:{
-			op->u.no=temp_cnt++;
+			op->no=temp_cnt++;
 			break;
 		}
 		default:
@@ -63,7 +69,7 @@ Operand new_op(int kind,int ifaddress,...){
 			assert(0);
 			break;
 	}
-
+	return op;
 }
 char *Reverse_relop(char*relop){
 	//进行符号的反转比如> 变成<= 用于iffalse的翻译;
@@ -97,6 +103,39 @@ int arithmetic_kind(char*cur){//将char类型的四则运算转换成Intercode�
 	}
 	printf("arithmetic_kind error\n");
 	assert(0);
+}
+void printop(Operand op,FILE*fp){
+	if(IM_DEBUG){
+		printf("printop: %d:\n",op->kind);
+	}
+	switch(op->kind){
+		case OP_VARIABLE:{
+			;
+			break;
+		}
+		case OP_CONSTANT:{
+			;
+			break;
+		}
+		case OP_FUNCTION:{
+			
+			break;
+		}
+		case OP_TEMPVAR:{
+			;
+			break;
+		}
+		case OP_LABEL:{
+			;
+			break;
+		}
+		default:
+			break;
+		
+	}
+}
+void fprintintercode(FILE*fp){
+	//遍历链表,打印
 }
 // Operand new_temp(){
 // 	//新建一个variable的OP,名字是t#
@@ -262,6 +301,7 @@ int intermediate_generate(struct Node*cur)
 	inter_head=NULL;
 	inter_tail=NULL;
 	Program_g(cur);
+	show_global_table();
 
 }
 int Program_g(struct Node* cur){
@@ -330,7 +370,7 @@ int FunDec_g(struct Node* cur){
 	//oneop_intercode(IN_FUNCTION,funop);
 
 	int query_ok=0;
-	struct Symbol_node* fun_symbol=query_symbol2(funop->u.funcname,&query_ok);
+	struct Symbol_node* fun_symbol=query_symbol2(funop->funcname,&query_ok);
 	if(query_ok==0){
 		printf("Fun query gg!\n");
 		assert(0);
@@ -344,7 +384,20 @@ int FunDec_g(struct Node* cur){
 			// Operand paramop=(Operand)(malloc(sizeof(struct Operand_)));
 			// paramop->kind=OP_VARIABLE;
 			// paramop->u.varname=params->name;
-			Operand paramop=new_op(OP_VARIABLE,OP_VAR,params->name);
+			printf("param,name:%s\n",params->name);
+			Operand paramop=NULL;
+			if(params->type->kind==ARRAY||params->type->kind==STRUCTURE){
+				paramop=new_op(OP_VARIABLE,OP_ADDRESS,(char*)params->name);
+				}
+			else{
+				paramop=new_op(OP_VARIABLE,OP_VAR,(char*)params->name);
+			}
+			//	printf("%s",paramop->u.varname);
+			//先找到这个变量的name,然后更新var_no;
+			int query_ok2=0;
+			struct Symbol_node* queryid=query_symbol2(params->name,&query_ok2);
+			if(query_ok2==0)assert(0);
+			queryid->var_no=var_cnt-1;
 			new_intercode(IN_PARAM,paramop);
 			// oneop_intercode(IN_PARAM,paramop);
 			params=params->tail;
@@ -562,8 +615,13 @@ Operand VarDec_g(struct Node*cur){
 		//单个变量,不是数组;
 		int query_success=0;
 		struct Symbol_node* queryid=query_symbol2(tempnode->string_contant,&query_success);
+
 		int typesize=gettypesize(queryid->field.type);
+		printf("vardec name:%s\n",tempnode->string_contant);
+		// char*able=(char*)malloc(sizeof(char)*64);
+		// strcpy(able,tempnode->string_contant);
 		result=new_op(OP_VARIABLE,OP_VAR,tempnode->string_contant);
+		queryid->var_no=var_cnt-1;//更新symbol_node里面对应的var_no;
 		if(typesize==4){
 			;//int 不用管;
 		}else{
@@ -585,8 +643,11 @@ Operand VarDec_g(struct Node*cur){
 		if(query_success==0){
 			assert(0);
 		}
+		printf("findnode name:%s\n",findnode->string_contant);
+		// char*able=(char*)malloc(sizeof(char)*64);
+		// strcpy(able,findnode->string_contant);
 		result=new_op(OP_VARIABLE,OP_VAR,findnode->string_contant);
-		
+		queryid->var_no=var_cnt-1;
 		int arraysize=gettypesize(queryid->field.type);
 		Operand op2=new_op(OP_CONSTANT,OP_VAR,arraysize);
 		new_intercode(IN_DEC,result,op2);
@@ -626,10 +687,28 @@ Operand Exp_g(struct Node*cur){
 	| FLOAT1 ok
 	*/
 	Operand temp=NULL;
+
 	struct Node*tempnode1=getchild(cur,0);
+	if(tempnode1==NULL)return temp;
+	
 	if(strcheck(tempnode1->name,"ID")){
 		//To be done!!!;
-		//所有vairable注册的时候都要添加到一个list里面便于这个时候查找;
+		//所有vairable注册的时候都要添加到symbol_table里面的va_no里面,这样子就可以查找了;
+		struct Node*tempnode2=getchild(cur,1);
+		if(tempnode2==NULL){
+			printf("ID:%s\n",tempnode1->string_contant);
+			int queryok=0;
+			struct Symbol_node*queryid=query_symbol2(tempnode1->string_contant,&queryok);
+			if(queryok==0)assert(0);
+			//如果是基本变量,那么返回;如果是数组或者结构体,那么感觉最好改成Address然后返回;
+			if(queryid->field.type->kind==ARRAY||queryid->field.type->kind==STRUCTURE){
+				;
+			}else{
+				;
+			}
+		}else{
+			//函数部分To be done;
+		}
 	}else if(strcheck(tempnode1->name,"INT")){
 		temp=new_op(OP_CONSTANT,OP_VAR,tempnode1->int_contant);
 		return temp;
@@ -672,6 +751,7 @@ Operand Exp_g(struct Node*cur){
 		return temp;
 
 	}else if(strcheck(tempnode1->name,"Exp")){
+		
 		struct Node*tempnode2=getchild(cur,1);
 		if(
 				(strcheck(tempnode2->name,"PLUS"))||
@@ -753,6 +833,7 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 	//////////
 	//NULL 表示课本中的fall
 	//#0:
+	//printf("In cond\n");
 	Operand zero=new_op(OP_CONSTANT,OP_VAR,0);
 
 	if(cur==NULL){;}

@@ -5,6 +5,7 @@
 #include"common.h"
 #include "symbol_table.h"
 #include <assert.h>
+#include <stdarg.h>
 
 #define IM_DEBUG 1
 
@@ -22,14 +23,11 @@ struct Operand_{
 		OP_ADDRESS,
 		OP_VAR
 	}ifaddress;
-	union{
 		char*varname;
 		int no;
 		int value;
 		char*funcname;
 		//To be done
-
-	}u;
 };
 struct InterCode{
 	enum{

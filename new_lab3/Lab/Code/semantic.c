@@ -29,6 +29,7 @@ struct Symbol_node* create_symbolnode(int kind,Type type,char*name,int ifdef,int
 	strcpy(insert_node->field.name,name);
 	insert_node->depth=depth;
 	insert_node->ifdef=ifdef;
+	insert_node->var_no=-1;
 	return insert_node;
 ;
 }
@@ -122,11 +123,13 @@ int Program_s(struct Node* cur){
 }
 int ExtDefList_s(struct Node* cur){
 	//printf("In ExtDefList_s\n");
+	if(cur==NULL)return 0;
 	struct Node* ExtDefnode=getchild(cur,0);
+	if(ExtDefnode==NULL)return 0;
 	struct Node* ExtDefListnode=getchild(cur,1);
 	ExtDef_s(ExtDefnode);
 	if(ExtDefListnode!=NULL)
-	ExtDefList_s(ExtDefListnode);
+		ExtDefList_s(ExtDefListnode);
 	
 	return 0;
 }

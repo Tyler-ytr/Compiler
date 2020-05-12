@@ -45,6 +45,9 @@ struct Symbol_node{
 	char* structsymbol_name;//sturct 里面的元素专用,防止超过32位;
 	int ifdef;//是定义还是声明?定义是1,声明是0
 	int depth;//深度信息,备用;
+	//lab3 记录对应的变量名;
+	int var_no;
+	int ifaddress;//记录是否是地址;
 };
 
 struct Symbol_bucket{

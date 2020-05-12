@@ -192,7 +192,9 @@ void show_global_table(){
 			while(temp!=NULL){
 				//	printf("name:%s",temp->field.name);
 					printf("name:%s type:%d ,",temp->field.name,temp->field.type->kind);
+					printf("var_no:%d ",temp->var_no);
 					temp=temp->lnext;
+					//printf("%d ",temp->var_no);
 			}
 			printf("\n");
 		};
@@ -262,7 +264,8 @@ int insert_symbol(Type type,char* name,int ifdef,int depth){
 	return 0;
 }
 int insert_symbol2(struct Symbol_node*p,struct Symbol_bucket* scope){
-	
+	//lab3 初始化 Symbol_node 的var_no值;
+	p->var_no=-1;
 	char *symbol_name=p->field.name;
 //	printf("in insert2:%s\n",symbol_name);
 	if(p->cnext!=NULL||p->lnext!=NULL){
