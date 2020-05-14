@@ -42,6 +42,7 @@ struct Symbol_bucket struct_head[SYMBOL_LEN];
 //struct Symbol_bucket* stack_head=NULL;//每进入一个大括号的时候往链表中插一个新的节点;
 struct Symbol_bucket* scope_head=NULL;//作用域控制链表;
 struct dec_func*dec_func_head=NULL;//函数定义链表,最后遍历检查;
+extern struct Symbol_bucket* global_scope;
 void push_function_dec(char*name,int column){
 	if(dec_func_head==NULL){
 		dec_func_head=(struct dec_func*)malloc(sizeof(struct dec_func));
@@ -201,6 +202,33 @@ void show_global_table(){
 	};
 	printf("-----------------------global_table_above----------------------\n");
 }
+// extern int gettypesize(Type cur);
+// void struct_offset(){
+// 	for(int i=0;i<SYMBOL_LEN;i++){
+// 		if(global_head[i].head!=NULL){
+// 			struct Symbol_node*temp=global_head[i].head;
+		
+// 			while(temp!=NULL){
+				
+// 				if(temp->field.type->kind==STRUCTURE){
+// 						printf("i:%d",i);
+// 					int offset=0;
+// 					char* symbolname=temp->field.type->u.structure_.name;
+// 					printf("symbolname:%s\n",symbolname);
+// 					//int queryok=0;
+// 					//struct Symbol_node*queryid=query_symbol2(symbolname,&queryok);
+// 					//queryid->offset=offset;
+// 					//offset+=gettypesize(queryid->field.type);
+// 					//temp=temp->field.type->u.structure_.structure;
+
+// 				}
+
+// 				temp=temp->lnext;
+// 			}
+
+// 		}
+// 	}
+// }
 void show_scope_table(){
 	printf("-----------------------scope_table_below----------------------\n");
 	struct Symbol_bucket*temp=scope_head;
@@ -304,12 +332,34 @@ int insert_symbol2(struct Symbol_node*p,struct Symbol_bucket* scope){
 		}
 	}
 }
+struct Symbol_node* create_symbolnode2(int kind,Type type,char*name,int ifdef,int depth)
+{
+	struct Symbol_node *insert_node=(struct Symbol_node *)malloc(sizeof(struct Symbol_node));
+	insert_node->lnext=NULL;
+	insert_node->cnext=NULL;
+	insert_node->kind=kind;
+	insert_node->field.type=type;
+	strcpy(insert_node->field.name,name);
+	insert_node->depth=depth;
+	insert_node->ifdef=ifdef;
+	insert_node->var_no=-1;
+	return insert_node;
+;
+}
 
-int insert_struct(Type type,char*name){
+int insert_struct(Type type,char*name,int offset,char*belongtosturctname){
+	//为了lab3 
+	struct Symbol_node*insert_node=create_symbolnode2(VARIABLE,type,name,1,0);
+	insert_node->offset=offset;
+	insert_node->belongtostructname=belongtosturctname;
+	insert_symbol2(insert_node,global_scope);
+	
 	int value=hash_name(name);
 	//printf("in insert struct\n");
 	if(struct_head[value].head==NULL){
 		struct Symbol_node*temp=malloc(sizeof(struct Symbol_node));
+		temp->offset=offset;
+		temp->belongtostructname=belongtosturctname;
 		temp->field.type=type;
 		temp->lnext=NULL;
 		//strcpy(temp->field.name,name);
@@ -326,6 +376,8 @@ int insert_struct(Type type,char*name){
 		}
 		else{
 			struct Symbol_node*temp=malloc(sizeof(struct Symbol_node));
+			temp->offset=offset;
+			temp->belongtostructname=belongtosturctname;
 			temp->field.type=type;
 			temp->lnext=head;
 			strcpy(temp->field.name,name);
@@ -338,6 +390,7 @@ int insert_struct(Type type,char*name){
 	}
 	return 0;
 }
+
 
 int query_struct(Type*type,char*name){//存在 return 0,不存在return -1
 	int value=hash_name(name);

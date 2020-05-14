@@ -41,7 +41,7 @@ if(lexError==0&&syntaxError==0){
 //tree_search(root,0);
 semantic_check(root);
 //printf("success_g:%d\n",success_g);
-intermediate_generate(root);
+intermediate_generate(root,fp);
 }
 return 0;
 /*

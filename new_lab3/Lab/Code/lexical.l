@@ -143,6 +143,7 @@ WhiteSpace  [ \t\r\n]+
 {RELOP} {printfdebug("RELOP");
         add_lexnode("RELOP",OTHERS);
                 emptyflag=1;
+        strcpy(yylval.node->string_contant,yytext);
          return RELOP;}
 "+" {printfdebug("plus");
         add_lexnode("PLUS",OTHERS);

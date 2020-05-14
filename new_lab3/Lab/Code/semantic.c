@@ -727,7 +727,7 @@ Type Exp_s(struct Node*cur){
 							//printf("here!!\n");
 							char*fieldname=(char*)(malloc(sizeof(char)*(1+strlen(idname)+strlen(exptype->u.structure_.name))));
 							strcpy(fieldname,idname);
-							strcat(fieldname,exptype->u.structure_.name);
+					//		strcat(fieldname,exptype->u.structure_.name);为了lab3
 							Type querytype=(Type)(malloc(sizeof(struct Type_)));
 							int queryresult=query_struct(&querytype,fieldname);
 						//	printf("queryname:%s\n",fieldname);
@@ -1057,6 +1057,7 @@ Type Specifier_s(struct Node*cur){
 					FieldList result=NULL;
 					FieldList tempfield=NULL;
 				//	printf("Specifier should be deflist:%s\n",DefListnode->name);
+					int curoffset=0;
 					while(1){
 				//				printf("gggg0\n");
 						struct Node* tempdefnode=getchild(tempdeflistnode,0);
@@ -1066,16 +1067,36 @@ Type Specifier_s(struct Node*cur){
 						}else{
 						//	printf("gggg1.5:%s\n",tempdefnode->name);
 						}
-						FieldList tempdeffield=Def_struct(tempdefnode,struct_name);
+						int tempoffset=0;
+						FieldList tempdeffield=Def_struct(tempdefnode,struct_name,curoffset,&tempoffset);
+						curoffset+=tempoffset;
+						printf("cur offset:%d\n",curoffset);
+
+						
 				//		printf("fieldname:%s\n",tempdeffield);
-					//	printf("filename:%s\n",tempdeffield->name);
+						//printf("filename:%s\n",tempdeffield->name);
 						//To be done
 						if(result==NULL){
 							result=tempdeffield;
-							tempfield=result;
+							FieldList tempdeffield_tail=tempdeffield;
+							while(tempdeffield_tail->tail!=NULL){
+								tempdeffield_tail=tempdeffield_tail->tail;
+							}
+
+							//printf("fieldname tail:%s\n",tempdeffield_tail->name);
+							tempfield=tempdeffield_tail;
+							//result=tempdeffield;
+							//tempfield=result;
 						}else{
 							tempfield->tail=tempdeffield;
-							tempfield=tempfield->tail;
+							FieldList tempdeffield_tail=tempdeffield;
+							while(tempdeffield_tail->tail!=NULL){
+								tempdeffield_tail=tempdeffield_tail->tail;
+							}
+							//printf("fieldname tail:%s\n",tempdeffield_tail->name);
+							tempfield=tempdeffield_tail;
+						//	tempfield->tail=tempdeffield;
+						//	tempfield=tempfield->tail;
 						}
 					//	printf("gggg3\n");
 						tempdeflistnode=getchild(tempdeflistnode,1);
@@ -1113,7 +1134,7 @@ Type Specifier_s(struct Node*cur){
 			int tempreuslt=query_symbol_exist(&temptype,tempname,&tempdef,depth_);//不太确定;
 			//printf("out of query:%d\n",tempreuslt);
 			if(tempreuslt!=0){
-				printf("tempresult:1\n");
+				//printf("tempresult:1\n");
 				error_s(17,ID_node->column,tempname,NULL);
 				return NULL;
 			}else if (temptype==NULL||temptype->kind!=STRUCTURE){
@@ -1149,6 +1170,7 @@ Type Specifier_s(struct Node*cur){
 					FieldList result=NULL;
 					FieldList tempfield=NULL;
 				//	printf("Specifier should be deflist:%s\n",DefListnode->name);
+					int curoffset=0;
 					while(1){
 					//			printf("gggg0\n");
 						struct Node* tempdefnode=getchild(tempdeflistnode,0);
@@ -1158,16 +1180,32 @@ Type Specifier_s(struct Node*cur){
 						}else{
 						;//	printf("gggg1.5:%s\n",tempdefnode->name);
 						}
-						FieldList tempdeffield=Def_struct(tempdefnode,struct_name);
-					//	printf("fieldname:%s\n",tempdeffield);
-					//	printf("filename:%s\n",tempdeffield->name);
+						int tempoffset=0;
+						FieldList tempdeffield=Def_struct(tempdefnode,struct_name,curoffset,&tempoffset);
+						curoffset+=tempoffset;
+						printf("cur offset:%d\n",curoffset);
+						//printf("fieldname:%s\n",tempdeffield);
+						//printf("filename:%s\n",tempdeffield->name);
 						//To be done
+						//printf("sdsdsd\n\n\n");
 						if(result==NULL){
 							result=tempdeffield;
-							tempfield=result;
+							FieldList tempdeffield_tail=tempdeffield;
+							while(tempdeffield_tail->tail!=NULL){
+								tempdeffield_tail=tempdeffield_tail->tail;
+							}
+							printf("fieldname tail:%s\n",tempdeffield_tail->name);
+							tempfield=tempdeffield_tail;
+							//tempfield=result;
 						}else{
 							tempfield->tail=tempdeffield;
-							tempfield=tempfield->tail;
+							FieldList tempdeffield_tail=tempdeffield;
+							while(tempdeffield_tail->tail!=NULL){
+								tempdeffield_tail=tempdeffield_tail->tail;
+							}
+							printf("fieldname tail:%s\n",tempdeffield_tail->name);
+							tempfield=tempdeffield_tail;
+							//tempfield=tempfield->tail;
 						}
 						tempdeflistnode=getchild(tempdeflistnode,1);
 						if(tempdeflistnode==NULL){
@@ -1208,8 +1246,8 @@ char* safe_strcpy(char*des,char*source){
     des[31]='\0';
     return des;
 }
-
-FieldList Def_struct(struct Node*cur,char* struct_name){
+extern int gettypesize(Type cur);
+FieldList Def_struct(struct Node*cur,char* struct_name,int cur_offset,int*tempoffset){
 	/*这里处理好Def;
 	Def -> Specifier DecList SEMI
 	DecList -> Dec
@@ -1218,6 +1256,7 @@ FieldList Def_struct(struct Node*cur,char* struct_name){
 		| VarDec ASSIGNOP Exp//报错！
 	需要给一个连好了的FieldList链表给上一层;
 	*///	printf("Def_struct,struct name:%s\n",struct_name);
+
 		struct Node* Specifier_node=getchild(cur,0);
 		Type nowtype=Specifier_s(Specifier_node);
 		struct Node* DecList_node=getchild(cur,1);
@@ -1228,20 +1267,31 @@ FieldList Def_struct(struct Node*cur,char* struct_name){
 		struct Node*temp_declist=DecList_node;
 		FieldList result=NULL;
 		FieldList temp2=NULL;
+		//lab3内容,需要记录offset
+		int offset=0;
+		struct Node* temp111=getchild(temp_declist,1);
+
 		while(getchild(temp_declist,1)!=NULL){
+				printf("Def_struct111\n\n");
 			struct Node* Dec_node=getchild(temp_declist,0);
 			FieldList tempdec_f=Dec_struct(Dec_node,nowtype);
 			char*dec_name=(char*)malloc(1+strlen(struct_name)+strlen(tempdec_f->name));
 		//	printf("Defstruct,dec name:%s\n",dec_name);
+		//	strcpy(dec_name,tempdec_f->name);
+		//	strcat(dec_name,struct_name); 为了lab3
 			strcpy(dec_name,tempdec_f->name);
-			strcat(dec_name,struct_name);
 			if(query_struct_name(dec_name)==0){
 				//重名;
 				error_s(15,Dec_node->column,tempdec_f->name,NULL);
 			}
 			else{
-				insert_struct(tempdec_f->type,dec_name);
+				printf("dec:name %s\n",dec_name);
+				insert_struct(tempdec_f->type,dec_name,offset+cur_offset,struct_name);
 			}
+			printf("dec:name %s\n",dec_name);
+			int typesize=gettypesize(tempdec_f->type);
+			printf("Dec type kind:%d\n\n",typesize);
+			offset+=typesize;
 			//串联field;
 			if(result==NULL){
 				result=tempdec_f;
@@ -1264,15 +1314,19 @@ FieldList Def_struct(struct Node*cur,char* struct_name){
 		FieldList tempdec_f=Dec_struct(Dec_node,nowtype);
 			char*dec_name=(char*)malloc(1+strlen(struct_name)+strlen(tempdec_f->name));
 			strcpy(dec_name,tempdec_f->name);
-			strcat(dec_name,struct_name);
-		//		printf("Defstruct,dec name:%s\n",tempdec_f->name);
+		//	strcat(dec_name,struct_name); 为了lab3
+ 		//		printf("Defstruct,dec name:%s\n",tempdec_f->name);
 			if(query_struct_name(dec_name)==0){
 				//重名;
 				error_s(15,Dec_node->column,tempdec_f->name,NULL);
 			}
 			else{
-				insert_struct(tempdec_f->type,dec_name);
+				printf("dec:name %s\n",dec_name);
+				insert_struct(tempdec_f->type,dec_name,offset+cur_offset,struct_name);
 			}
+			int typesize=gettypesize(tempdec_f->type);
+			printf("Dec type kind:%d\n\n",typesize);
+			offset+=typesize;
 			//串联field;
 			if(result==NULL){
 				result=tempdec_f;
@@ -1281,6 +1335,7 @@ FieldList Def_struct(struct Node*cur,char* struct_name){
 				temp2->tail=tempdec_f;
 				temp2=temp2->tail;
 			}
+			*tempoffset=offset;
 			return result;
 
 	

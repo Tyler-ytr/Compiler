@@ -37,9 +37,14 @@ struct InterCode{
 		IN_RETURN,
 		IN_LABEL,
 		IN_GOTO,
+		IN_WRITE,
+		IN_READ,
+		IN_ARG,
 		//双目
 		IN_ASSIGN,
 		IN_DEC,
+		IN_CALL,
+		//三目
 		IN_ADD,
 		IN_SUB,
 		IN_MUL,
@@ -80,9 +85,10 @@ struct Intercodes{
 };
 
 
-int intermediate_generate(struct Node*cur);
+int intermediate_generate(struct Node*cur,FILE* fp);
 int Program_g(struct Node* cur);
 int ExtDefList_g(struct Node* cur);
+int ExtDef_g(struct Node* cur);
 int FunDec_g(struct Node* cur);
 int CompSt_g(struct Node* cur);
 int DefList_g(struct Node*cur);

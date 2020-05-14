@@ -24,7 +24,7 @@ struct Type_{
 		//数组类型信息包括元素类型与数组大小构成
 		struct{ Type elem;int size;}array_;
 		//结构体类型的信息是一个链表
-		struct{FieldList structure;char *name;}structure_;
+		struct{FieldList structure;char *name;int offset;}structure_;
 		struct{
 			Type returnparam;//返回的参数类型
 			int paramnums;//输入的参数数量
@@ -48,6 +48,8 @@ struct Symbol_node{
 	//lab3 记录对应的变量名;
 	int var_no;
 	int ifaddress;//记录是否是地址;
+	int offset;
+	char*belongtostructname;
 };
 
 struct Symbol_bucket{
@@ -70,7 +72,7 @@ int query_struct_name(char*name);//仅仅指查名字;
 int query_symbol_name(char*name,int depth);//仅仅指查名字,并且只查当前层;
 
 int query_struct(Type*type,char*name);//结构体域里面使用的;
-int insert_struct(Type type,char*name);
+int insert_struct(Type type,char*name,int offset,char*belongtostructname);
 struct Symbol_bucket* init_symboltable();
 int delete_symbol(Type type,char*name,int*ifdef);//删除符号;
 int check_type(Type A,Type B);//结构等价判断;0表示不同,1表示相同;
@@ -88,5 +90,6 @@ void check_function_def();
 
 int query_symbol_exist2(Type* type,char*name,int*ifdef,int depth,int*kind);
 
+//void struct_offset();//用于计算struct里面各个元素的offset
 
 #endif
