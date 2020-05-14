@@ -1,8 +1,47 @@
-FUNCTION main : 
-READ t0
-v0 := t0
-IF v0 == #0 GOTO label0
-v1 := #1
-IF v1 == #0 GOTO label0
-WRITE v1
+FUNCTION partial_array_copy : 
+DEC v0 100
+DEC v1 100
+v2 := #0
 LABEL label0 : 
+IF v2 >= #5 GOTO label1
+t0 := #3 * #20
+t1 := &v0 + t0
+t2 := v2 * #4
+t3 := t1 + t2
+t4 := v2 * v2
+*t3 := t4
+t5 := v2 + #1
+v2 := t5
+GOTO label0
+LABEL label1 : 
+t6 := #2 * #20
+t7 := &v1 + t6
+t8 := #3 * #20
+t9 := &v0 + t8
+t10 := t7
+t11 := t9
+t12 := &v0 + #100
+LABEL label2 : 
+IF t11 >= t12 GOTO label3
+*t10 := *t11
+t10 := t10 + #4
+t11 := t11 + #4
+GOTO label2
+LABEL label3 : 
+v2 := #0
+LABEL label4 : 
+IF v2 >= #5 GOTO label5
+t13 := #2 * #20
+t14 := &v1 + t13
+t15 := v2 * #4
+t16 := t14 + t15
+WRITE *t16
+t17 := #0
+t18 := v2 + #1
+v2 := t18
+GOTO label4
+LABEL label5 : 
+RETURN #0
+FUNCTION main : 
+t19 := CALL partial_array_copy
+RETURN #0

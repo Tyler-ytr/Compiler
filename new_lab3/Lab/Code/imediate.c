@@ -43,19 +43,23 @@ Operand new_op(int kind,int ifaddress,...){
 		}
 		case OP_FUNCTION:{
 			op->funcname=va_arg(args,char*);
+			op->varname=NULL;
 			break;
 		}
 		case OP_CONSTANT:{
 			op->value=va_arg(args,int);
+			op->varname=NULL;
 			break;
 		}
 		case OP_LABEL:{
 			op->no=label_cnt;
 			label_cnt++;
+			op->varname=NULL;
 			break;
 		}
 		case OP_TEMPVAR:{
 			op->no=temp_cnt;
+			op->varname=NULL;
 			temp_cnt++;
 			break;
 		}
@@ -100,6 +104,7 @@ Operand copyop(Operand op){
 }
 int arithmetic_kind(char*cur){//将char类型的四则运算转换成Intercode里面的kind;
 	//int result=0;
+	//printf("char%s\n",cur);
 	if(strcheck(cur,"PLUS")){
 		return IN_ADD;
 	}else if(strcheck(cur,"MINUS")){
@@ -1115,17 +1120,22 @@ Operand Exp_g(struct Node*cur){
 				if(strcheck(tempnode3->name,"Args")){
 					//write(n) 
 					struct Node* tempnode31=getchild(tempnode3,0);
+					Operand ttemp=NULL;
 					if(strcheck(tempnode31->name,"Exp")){
-						temp=Exp_g(tempnode31);
+						ttemp=Exp_g(tempnode31);
 					}
-					if(temp!=NULL)
-					new_intercode(IN_WRITE,temp);
+					if(ttemp!=NULL)
+					new_intercode(IN_WRITE,ttemp);
 					else{
 						if(IM_DEBUG){
 						printf("GG in exp\n");
 						assert(0);
 						}
 					}
+					Operand constantop=new_op(OP_CONSTANT,OP_VAR,0);
+					temp=new_op(OP_TEMPVAR,OP_VAR);
+					new_intercode(IN_ASSIGN,temp,constantop);
+
 					return temp;
 				}
 				// if(IM_DEBUG)
@@ -1230,8 +1240,93 @@ Operand Exp_g(struct Node*cur){
 				struct Node*expnode2=getchild(cur,2);
 				Operand op1=Exp_g(expnode1);
 				Operand op2=Exp_g(expnode2);
-				if(op1!=NULL&&op2!=NULL)
-				new_intercode(IN_ASSIGN,op1,op2);
+
+			//	printf("varname:%s %s %d %d\n",op1->varname,op2->varname,op1->ifaddress,op2->ifaddress);
+				// int queryok=0;
+				// struct Symbol_node*queryid1=query_symbol2(op1->varname,&queryok);
+				// struct Symbol_node*queryid2=query_symbol2(op2->varname,&queryok);
+				int flag=0;
+				if(op1->varname!=NULL&&op2->varname!=NULL){
+					int queryok=0;
+					struct Symbol_node*queryid1=query_symbol2(op1->varname,&queryok);
+					struct Symbol_node*queryid2=query_symbol2(op2->varname,&queryok);
+					if(queryid1->field.type->kind==ARRAY&&queryid2->field.type->kind==ARRAY){
+					//	printf("herer\n");
+						if(op1->ifaddress==OP_VAR&&op2->ifaddress==OP_VAR){
+						//	printf("herer\n");
+							flag=1;
+						}
+
+					}
+
+				}
+				if(flag==1)
+				{
+					int queryok=0;
+					struct Symbol_node*queryid1=query_symbol2(op1->varname,&queryok);
+					struct Symbol_node*queryid2=query_symbol2(op2->varname,&queryok);
+
+					int depth1=op1->depth;
+					int depth2=op2->depth;
+					//先确定op1的位置;
+					//然后确定op2的位置; op2---->&v2+dec值 赋值到op1的位置往后这么多;
+					//然后确定要赋值的长度;
+					//赋值;
+					int typesize2=gettypesize(queryid2->field.type);
+					Operand constantop2=new_op(OP_CONSTANT,OP_VAR,typesize2);
+					Operand four=new_op(OP_CONSTANT,OP_VAR,4);
+					Operand v1=copyop(op1);
+					if(v1->kind==OP_VARIABLE){
+						v1->ifaddress=OP_ADDRESS;
+					}
+					// if(v1->ifaddress=OP_VAR)
+					// 	v1->ifaddress=OP_ADDRESS;
+					// else{
+					// 	v1->ifaddress=OP_VAR;
+					// }
+					Operand v2=copyop(op2);
+					//v2->ifaddress=OP_ADDRESS;
+					// if(v2->ifaddress=OP_VAR)
+					// 	v2->ifaddress=OP_ADDRESS;
+					// else{
+					// 	v2->ifaddress=OP_VAR;
+					// }
+					if(v2->kind==OP_VARIABLE){
+						v2->ifaddress=OP_ADDRESS;
+					}
+				//	printf("kind :%d %d\n",v1->ifaddress,v2->ifaddress);
+					Operand t1op=new_op(OP_TEMPVAR,OP_VAR);
+					new_intercode(IN_ASSIGN,t1op,v1);
+					
+					Operand t2op=new_op(OP_TEMPVAR,OP_VAR);
+					new_intercode(IN_ASSIGN,t2op,v2);			
+					
+					Operand oriop=new_op(OP_VARIABLE,OP_ADDRESS,op2->varname);
+					oriop->no=queryid2->var_no;
+					//printf("orino:%d %d %d \n",oriop->no,queryid1->var_no,queryid2->var_no);
+					var_cnt-=1;
+					Operand endop=new_op(OP_TEMPVAR,OP_VAR);
+					new_intercode(IN_ADD,endop,oriop,constantop2);
+
+					Operand labelop1=new_op(OP_LABEL,OP_VAR);
+					Operand labelop2=new_op(OP_LABEL,OP_VAR);
+
+					new_intercode(IN_LABEL,labelop1);
+					new_intercode(IN_IFGOTO,t2op,">=",endop,labelop2);
+					Operand tempt1op=copyop(t1op);
+					Operand tempt2op=copyop(t2op);
+					tempt1op->ifaddress=OP_ADDRESS;
+					tempt2op->ifaddress=OP_ADDRESS;
+					new_intercode(IN_ASSIGN,tempt1op,tempt2op);
+					new_intercode(IN_ADD,t1op,t1op,four);
+					new_intercode(IN_ADD,t2op,t2op,four);
+
+					new_intercode(IN_GOTO,labelop1);
+					new_intercode(IN_LABEL,labelop2);
+
+
+				}else if(op1!=NULL&&op2!=NULL)
+					{new_intercode(IN_ASSIGN,op1,op2);}
 				else{
 				//	assert(0);
 				if(IM_DEBUG){
@@ -1496,11 +1591,17 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 				Operand op1=Exp_g(tempnode1);
 				struct Node* tempnode3=getchild(cur,2);
 				Operand op2=Exp_g(tempnode3);
-				int in_kind=arithmetic_kind(tempnode2->string_contant);
+				
+				int in_kind=arithmetic_kind(tempnode2->name);
 				Operand result=new_op(OP_TEMPVAR,OP_VAR);
+				//printf("temp:%d\n",result->no);		
 				if(op1!=NULL&&op2!=NULL)
-				new_intercode(in_kind,result,op1,op2);
+				{
+					//printf("kind:%d\n",in_kind);
+					new_intercode(in_kind,result,op1,op2);
+				}
 				else{
+					//printf("OMG\n");
 					if(IM_DEBUG){
 						printf("GG in cond\n");
 						assert(0);
@@ -1541,7 +1642,7 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 
 		}else if(strcheck(tempnode1->name,"NOT")){
 			struct Node*expnode=getchild(cur,1);
-			Cond_g(expnode,label_true,label_false);
+			Cond_g(expnode,label_false,label_true);
 		}else if(strcheck(tempnode1->name,"MINUS")){
 			
 			//printf("cond Minus\n");
