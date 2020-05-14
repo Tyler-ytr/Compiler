@@ -6,8 +6,9 @@
 #include "symbol_table.h"
 #include <assert.h>
 #include <stdarg.h>
+//#include "semantic.h"
 
-#define IM_DEBUG 1
+#define IM_DEBUG 0
 
 typedef struct Operand_* Operand;
 struct Operand_{
@@ -27,6 +28,7 @@ struct Operand_{
 		int no;
 		int value;
 		char*funcname;
+		int depth;
 		//To be done
 };
 struct InterCode{

@@ -118,7 +118,7 @@ int Program_s(struct Node* cur){
 	check_function_def();
 
 
-	show_global_table();
+	//show_global_table();
 	return 0;
 }
 int ExtDefList_s(struct Node* cur){
@@ -1070,7 +1070,7 @@ Type Specifier_s(struct Node*cur){
 						int tempoffset=0;
 						FieldList tempdeffield=Def_struct(tempdefnode,struct_name,curoffset,&tempoffset);
 						curoffset+=tempoffset;
-						printf("cur offset:%d\n",curoffset);
+						//printf("cur offset:%d\n",curoffset);
 
 						
 				//		printf("fieldname:%s\n",tempdeffield);
@@ -1183,7 +1183,7 @@ Type Specifier_s(struct Node*cur){
 						int tempoffset=0;
 						FieldList tempdeffield=Def_struct(tempdefnode,struct_name,curoffset,&tempoffset);
 						curoffset+=tempoffset;
-						printf("cur offset:%d\n",curoffset);
+						//printf("cur offset:%d\n",curoffset);
 						//printf("fieldname:%s\n",tempdeffield);
 						//printf("filename:%s\n",tempdeffield->name);
 						//To be done
@@ -1272,7 +1272,6 @@ FieldList Def_struct(struct Node*cur,char* struct_name,int cur_offset,int*tempof
 		struct Node* temp111=getchild(temp_declist,1);
 
 		while(getchild(temp_declist,1)!=NULL){
-				printf("Def_struct111\n\n");
 			struct Node* Dec_node=getchild(temp_declist,0);
 			FieldList tempdec_f=Dec_struct(Dec_node,nowtype);
 			char*dec_name=(char*)malloc(1+strlen(struct_name)+strlen(tempdec_f->name));
@@ -1285,12 +1284,12 @@ FieldList Def_struct(struct Node*cur,char* struct_name,int cur_offset,int*tempof
 				error_s(15,Dec_node->column,tempdec_f->name,NULL);
 			}
 			else{
-				printf("dec:name %s\n",dec_name);
+				//printf("dec:name %s\n",dec_name);
 				insert_struct(tempdec_f->type,dec_name,offset+cur_offset,struct_name);
 			}
-			printf("dec:name %s\n",dec_name);
+			//printf("dec:name %s\n",dec_name);
 			int typesize=gettypesize(tempdec_f->type);
-			printf("Dec type kind:%d\n\n",typesize);
+			//printf("Dec type kind:%d\n\n",typesize);
 			offset+=typesize;
 			//串联field;
 			if(result==NULL){
@@ -1321,11 +1320,11 @@ FieldList Def_struct(struct Node*cur,char* struct_name,int cur_offset,int*tempof
 				error_s(15,Dec_node->column,tempdec_f->name,NULL);
 			}
 			else{
-				printf("dec:name %s\n",dec_name);
+			//	printf("dec:name %s\n",dec_name);
 				insert_struct(tempdec_f->type,dec_name,offset+cur_offset,struct_name);
 			}
 			int typesize=gettypesize(tempdec_f->type);
-			printf("Dec type kind:%d\n\n",typesize);
+			//printf("Dec type kind:%d\n\n",typesize);
 			offset+=typesize;
 			//串联field;
 			if(result==NULL){

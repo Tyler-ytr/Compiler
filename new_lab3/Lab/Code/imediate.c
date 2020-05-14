@@ -36,16 +36,9 @@ Operand new_op(int kind,int ifaddress,...){
 	op->ifaddress=ifaddress;
 	switch(kind){
 		case OP_VARIABLE:{
-			//char
-		//	char* temp=va_arg(args,char*);
 			 op->varname=va_arg(args,char*);
 			 op->no=var_cnt;
 			 var_cnt++;
-			// if(op->u.varname!=NULL){
-			printf("var : %s\n ",op->varname);			
-			// }else{
-			// 	printf("erer\n");
-			// }
 			break;
 		}
 		case OP_FUNCTION:{
@@ -67,8 +60,9 @@ Operand new_op(int kind,int ifaddress,...){
 			break;
 		}
 		default:
+		if(IM_DEBUG){
 			printf("New op to be done\n");
-			assert(0);
+			assert(0);}
 			break;
 	}
 	va_end(args);
@@ -101,6 +95,8 @@ Operand copyop(Operand op){
 	result->no=op->no;
 	result->funcname=op->funcname;
 	result->value=op->value;
+	result->depth=op->depth;
+	
 }
 int arithmetic_kind(char*cur){//将char类型的四则运算转换成Intercode里面的kind;
 	//int result=0;
@@ -113,8 +109,10 @@ int arithmetic_kind(char*cur){//将char类型的四则运算转换成Intercode�
 	}else if(strcheck(cur,"DIV")){
 		return IN_DIV;
 	}
+	if(IM_DEBUG){
 	printf("arithmetic_kind error\n");
 	assert(0);
+	}
 }
 void printop(Operand op,FILE*fp){
 	if(IM_DEBUG){
@@ -178,140 +176,271 @@ void printop(Operand op,FILE*fp){
 void fprintintercode(FILE*fp){
 	//遍历链表,打印;
 	
-	if(IM_DEBUG){
-		;//测试版本
-		printf("---------------intercode-----------------------\n");
-		struct Intercodes *temp=inter_head->next;
-		while(temp!=inter_head){
-			//printf("%d\n",temp->code.kind);
-			switch(temp->code.kind){
-				case IN_FUNCTION:{
-					printf("FUNCTION ");
-					printop(temp->code.u.one.op0,fp);
-					printf(" : \n");
-					break;
-				}
-				case IN_PARAM:{
-					printf("PARAM ");
-					printop(temp->code.u.one.op0,fp);
-					printf("\n");
-					break;
-				}
-				case IN_RETURN:{
-					printf("RETURN ");
-					printop(temp->code.u.one.op0,fp);
-					printf("\n");
-					break;
-				}
-				case IN_LABEL:{
-					printf("LABEL label");
-					printop(temp->code.u.one.op0,fp);
-					printf(" : \n");
-					break;
-				}
-				case IN_GOTO:{
-					printf("GOTO label");
-					printop(temp->code.u.one.op0,fp);
-					printf("\n");
-					break;
-				}
-				case IN_WRITE:{
-          printf("WRITE ");
-          printop(temp->code.u.one.op0, fp);
-          printf("\n");
-					break;
-				}
-				case IN_READ:{
-          printf("READ ");
-          printop(temp->code.u.one.op0, fp);
-          printf("\n");
-					break;
-				}
-				case IN_ARG:{
-					printf("ARG ");
-          printop(temp->code.u.one.op0, fp); 
-          printf(" \n");
-          break;
-				}
-				case IN_ASSIGN:{
-					printop(temp->code.u.two.left,fp);
-					printf(" := ");
-					printop(temp->code.u.two.right,fp);
-					printf("\n");
-					break;
-				}
-				case IN_DEC:{
-					printf("DEC ");
-					printop(temp->code.u.two.left,fp);
-					printf(" %d",temp->code.u.two.right->value);
-					printf("\n");
-					break;
-				}
-				case IN_CALL:{
-          printop(temp->code.u.two.left, fp);
-          printf(" := CALL ");
-          printop(temp->code.u.two.right, fp);
-          printf("\n");
-					break;
-				}
-				case IN_ADD:{
-					printop(temp->code.u.three.result,fp);
-					printf(" := ");
-					printop(temp->code.u.three.op1,fp);
-					printf(" + ");
-					printop(temp->code.u.three.op2,fp);
-					printf("\n");
-					//printf("ADD GG\n");
-					break;
-				}
-				case IN_SUB:{
-					printop(temp->code.u.three.result,fp);
-					printf(" := ");
-					printop(temp->code.u.three.op1,fp);
-					printf(" - ");
-					printop(temp->code.u.three.op2,fp);
-					printf("\n");
-					break;
-				}
-				case IN_MUL:{
-					printop(temp->code.u.three.result,fp);
-					printf(" := ");
-					printop(temp->code.u.three.op1,fp);
-					printf(" * ");
-					printop(temp->code.u.three.op2,fp);
-					printf("\n");
-					break;
-				}
-				case IN_DIV:{
-					printop(temp->code.u.three.result,fp);
-					printf(" := ");
-					printop(temp->code.u.three.op1,fp);
-					printf(" / ");
-					printop(temp->code.u.three.op2,fp);
-					printf("\n");
-					break;
-				}
-				case IN_IFGOTO:{
-					printf("IF ");
-					printop(temp->code.u.four.op1,fp);
-					printf(" %s ",temp->code.u.four.relop);
-					printop(temp->code.u.four.op2,fp);
-					printf(" GOTO label");
-          printop(temp->code.u.four.op3, fp);
-          printf("\n");
-					break;
-				}
-				default:{
-					;
-					break;
-				}
+	// if(IM_DEBUG){
+	// 	;//测试版本
+	// 	printf("---------------intercode-----------------------\n");
+	// 	struct Intercodes *temp=inter_head->next;
+	// 	while(temp!=inter_head){
+	// 		//printf("%d\n",temp->code.kind);
+	// 		switch(temp->code.kind){
+	// 			case IN_FUNCTION:{
+	// 				printf("FUNCTION ");
+	// 				printop(temp->code.u.one.op0,fp);
+	// 				printf(" : \n");
+	// 				break;
+	// 			}
+	// 			case IN_PARAM:{
+	// 				printf("PARAM ");
+	// 				printop(temp->code.u.one.op0,fp);
+	// 				printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_RETURN:{
+	// 				printf("RETURN ");
+	// 				printop(temp->code.u.one.op0,fp);
+	// 				printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_LABEL:{
+	// 				printf("LABEL label");
+	// 				printop(temp->code.u.one.op0,fp);
+	// 				printf(" : \n");
+	// 				break;
+	// 			}
+	// 			case IN_GOTO:{
+	// 				printf("GOTO label");
+	// 				printop(temp->code.u.one.op0,fp);
+	// 				printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_WRITE:{
+  //         printf("WRITE ");
+  //         printop(temp->code.u.one.op0, fp);
+  //         printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_READ:{
+  //         printf("READ ");
+  //         printop(temp->code.u.one.op0, fp);
+  //         printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_ARG:{
+	// 				printf("ARG ");
+  //         printop(temp->code.u.one.op0, fp); 
+  //         printf(" \n");
+  //         break;
+	// 			}
+	// 			case IN_ASSIGN:{
+	// 				printop(temp->code.u.two.left,fp);
+	// 				printf(" := ");
+	// 				printop(temp->code.u.two.right,fp);
+	// 				printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_DEC:{
+	// 				printf("DEC ");
+	// 				printop(temp->code.u.two.left,fp);
+	// 				printf(" %d",temp->code.u.two.right->value);
+	// 				printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_CALL:{
+  //         printop(temp->code.u.two.left, fp);
+  //         printf(" := CALL ");
+  //         printop(temp->code.u.two.right, fp);
+  //         printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_ADD:{
+	// 				printop(temp->code.u.three.result,fp);
+	// 				printf(" := ");
+	// 				printop(temp->code.u.three.op1,fp);
+	// 				printf(" + ");
+	// 				printop(temp->code.u.three.op2,fp);
+	// 				printf("\n");
+	// 				//printf("ADD GG\n");
+	// 				break;
+	// 			}
+	// 			case IN_SUB:{
+	// 				printop(temp->code.u.three.result,fp);
+	// 				printf(" := ");
+	// 				printop(temp->code.u.three.op1,fp);
+	// 				printf(" - ");
+	// 				printop(temp->code.u.three.op2,fp);
+	// 				printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_MUL:{
+	// 				printop(temp->code.u.three.result,fp);
+	// 				printf(" := ");
+	// 				printop(temp->code.u.three.op1,fp);
+	// 				printf(" * ");
+	// 				printop(temp->code.u.three.op2,fp);
+	// 				printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_DIV:{
+	// 				printop(temp->code.u.three.result,fp);
+	// 				printf(" := ");
+	// 				printop(temp->code.u.three.op1,fp);
+	// 				printf(" / ");
+	// 				printop(temp->code.u.three.op2,fp);
+	// 				printf("\n");
+	// 				break;
+	// 			}
+	// 			case IN_IFGOTO:{
+	// 				printf("IF ");
+	// 				printop(temp->code.u.four.op1,fp);
+	// 				printf(" %s ",temp->code.u.four.relop);
+	// 				printop(temp->code.u.four.op2,fp);
+	// 				printf(" GOTO label");
+  //         printop(temp->code.u.four.op3, fp);
+  //         printf("\n");
+	// 				break;
+	// 			}
+	// 			default:{
+	// 				;
+	// 				break;
+	// 			}
+	// 		}
+			
+			
+	// 		temp=temp->next;
+	// 	}
+	// 	printf("---------------intercode above-----------------\n");
+	// }
+
+	struct Intercodes *temp=inter_head->next;
+	while(temp!=inter_head){
+		//printf("%d\n",temp->code.kind);
+		switch(temp->code.kind){
+			case IN_FUNCTION:{
+				fprintf(fp,"FUNCTION ");
+				printop(temp->code.u.one.op0,fp);
+				fprintf(fp," : \n");
+				break;
 			}
-			
-			
-			temp=temp->next;
+			case IN_PARAM:{
+				fprintf(fp,"PARAM ");
+				printop(temp->code.u.one.op0,fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_RETURN:{
+				fprintf(fp,"RETURN ");
+				printop(temp->code.u.one.op0,fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_LABEL:{
+				fprintf(fp,"LABEL label");
+				printop(temp->code.u.one.op0,fp);
+				fprintf(fp," : \n");
+				break;
+			}
+			case IN_GOTO:{
+				fprintf(fp,"GOTO label");
+				printop(temp->code.u.one.op0,fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_WRITE:{
+				fprintf(fp,"WRITE ");
+				printop(temp->code.u.one.op0, fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_READ:{
+				fprintf(fp,"READ ");
+				printop(temp->code.u.one.op0, fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_ARG:{
+				fprintf(fp,"ARG ");
+				printop(temp->code.u.one.op0, fp); 
+				fprintf(fp," \n");
+				break;
+			}
+			case IN_ASSIGN:{
+				printop(temp->code.u.two.left,fp);
+				fprintf(fp," := ");
+				printop(temp->code.u.two.right,fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_DEC:{
+				fprintf(fp,"DEC ");
+				printop(temp->code.u.two.left,fp);
+				fprintf(fp," %d",temp->code.u.two.right->value);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_CALL:{
+				printop(temp->code.u.two.left, fp);
+				fprintf(fp," := CALL ");
+				printop(temp->code.u.two.right, fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_ADD:{
+				printop(temp->code.u.three.result,fp);
+				fprintf(fp," := ");
+				printop(temp->code.u.three.op1,fp);
+				fprintf(fp," + ");
+				printop(temp->code.u.three.op2,fp);
+				fprintf(fp,"\n");
+				//printf("ADD GG\n");
+				break;
+			}
+			case IN_SUB:{
+				printop(temp->code.u.three.result,fp);
+				fprintf(fp," := ");
+				printop(temp->code.u.three.op1,fp);
+				fprintf(fp," - ");
+				printop(temp->code.u.three.op2,fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_MUL:{
+				printop(temp->code.u.three.result,fp);
+				fprintf(fp," := ");
+				printop(temp->code.u.three.op1,fp);
+				fprintf(fp," * ");
+				printop(temp->code.u.three.op2,fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_DIV:{
+				printop(temp->code.u.three.result,fp);
+				fprintf(fp," := ");
+				printop(temp->code.u.three.op1,fp);
+				fprintf(fp," / ");
+				printop(temp->code.u.three.op2,fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			case IN_IFGOTO:{
+				fprintf(fp,"IF ");
+				printop(temp->code.u.four.op1,fp);
+				fprintf(fp," %s ",temp->code.u.four.relop);
+				printop(temp->code.u.four.op2,fp);
+				fprintf(fp," GOTO label");
+				printop(temp->code.u.four.op3, fp);
+				fprintf(fp,"\n");
+				break;
+			}
+			default:{
+				;
+				break;
+			}
 		}
-		printf("---------------intercode above-----------------\n");
+		
+		
+		temp=temp->next;
 	}
+	fclose(fp);
 
 }
 // Operand new_temp(){
@@ -380,11 +509,12 @@ void new_intercode(int kind,...){
 			tempcode->code.u.four.relop=va_arg(args,char*);
 			tempcode->code.u.four.op2=va_arg(args,Operand);
 			tempcode->code.u.four.op3=va_arg(args,Operand);
-			printf("create relop:%s\n",tempcode->code.u.four.relop);
+		if(IM_DEBUG)	printf("create relop:%s\n",tempcode->code.u.four.relop);
 			break;
 		default:
+		if(IM_DEBUG){
 			printf("new_intercode to be done!\n");
-			assert(0);
+			assert(0);}
 		break;
 
 	}
@@ -490,8 +620,8 @@ int intermediate_generate(struct Node*cur,FILE*fp)
 	inter_head->prev=inter_head;
 	inter_tail=inter_head;
 	Program_g(cur);
-	show_global_table();
-	show_struct_table();
+if(IM_DEBUG)	show_global_table();
+if(IM_DEBUG)	show_struct_table();
 	fprintintercode(fp);
 }
 int Program_g(struct Node* cur){
@@ -499,7 +629,6 @@ int Program_g(struct Node* cur){
 	
 	struct Node*Extdeflistnode=getchild(cur,0);
 	int result=ExtDefList_g(Extdeflistnode);
-//	printf("result:%d\n",result)
 ;
 	return result;
 
@@ -556,7 +685,7 @@ int FunDec_g(struct Node* cur){
 	Operand funop=new_op(OP_FUNCTION,OP_VAR,idnode->string_contant);
 	// funop->u.funcname=idnode->string_contant;
 	// funop->kind=OP_FUNCTION;
-	printf("funop: %s\n",funop->funcname);
+	if(IM_DEBUG)printf("funop: %s\n",funop->funcname);
 	new_intercode(IN_FUNCTION,funop);
 	//oneop_intercode(IN_FUNCTION,funop);
 
@@ -575,7 +704,7 @@ int FunDec_g(struct Node* cur){
 			// Operand paramop=(Operand)(malloc(sizeof(struct Operand_)));
 			// paramop->kind=OP_VARIABLE;
 			// paramop->u.varname=params->name;
-			printf("param,name:%s\n",params->name);
+			if(IM_DEBUG)printf("param,name:%s\n",params->name);
 			Operand paramop=NULL;
 			if(params->type->kind==ARRAY||params->type->kind==STRUCTURE){
 				paramop=new_op(OP_VARIABLE,OP_ADDRESS,(char*)params->name);
@@ -704,8 +833,9 @@ int Stmt_g(struct Node* cur){
 		//"类似地,if-else 和while 语句地规则也将B.true设置为fall";
 		struct Node*stmtnode=getchild(cur,4);
 		if(strcheck(stmtnode->name,"Stmt")!=1){
+			if(IM_DEBUG){
 			printf("while error\n");
-			assert(0);
+			assert(0);}
 		}
 		Stmt_g(stmtnode);
 		new_intercode(IN_GOTO,label1);
@@ -816,10 +946,11 @@ Operand VarDec_g(struct Node*cur){
 		struct Symbol_node* queryid=query_symbol2(tempnode->string_contant,&query_success);
 
 		int typesize=gettypesize(queryid->field.type);
-		printf("vardec name:%s\n",tempnode->string_contant);
+		if(IM_DEBUG)printf("vardec name:%s\n",tempnode->string_contant);
 		// char*able=(char*)malloc(sizeof(char)*64);
 		// strcpy(able,tempnode->string_contant);
 		result=new_op(OP_VARIABLE,OP_VAR,tempnode->string_contant);
+		queryid->ifaddress=result->ifaddress;
 		queryid->var_no=result->no;//更新symbol_node里面对应的var_no;
 		if(typesize==4){
 			;//int 不用管;
@@ -842,10 +973,11 @@ Operand VarDec_g(struct Node*cur){
 		if(query_success==0){
 			assert(0);
 		}
-		printf("findnode name:%s\n",findnode->string_contant);
+		if(IM_DEBUG)printf("findnode name:%s\n",findnode->string_contant);
 		// char*able=(char*)malloc(sizeof(char)*64);
 		// strcpy(able,findnode->string_contant);
 		result=new_op(OP_VARIABLE,OP_VAR,findnode->string_contant);
+		queryid->ifaddress=result->ifaddress;
 		queryid->var_no=result->no;
 		int arraysize=gettypesize(queryid->field.type);
 		Operand op2=new_op(OP_CONSTANT,OP_VAR,arraysize);
@@ -870,9 +1002,8 @@ void Arg_g(struct Node*cur,FieldList param){
 	struct Node*tempnode1=getchild(cur,0);
 	if(Exp_g(tempnode1)!=NULL){
 	Operand tempop=Exp_g(tempnode1);//使用局部变量防止修改原来的值;
-	printf("ori value:%d",tempop->value);
+	if(IM_DEBUG)printf("ori value:%d",tempop->value);
 	Operand op=copyop(tempop);
-	printf("kind in ARG:%d\n",op->kind);
 	
 	if(param->type->kind==STRUCTURE||param->type->kind==ARRAY){
 		if(op->ifaddress==OP_ADDRESS){
@@ -895,7 +1026,10 @@ void Arg_g(struct Node*cur,FieldList param){
 	// 	printf("GG in exp\n");
 	// }
 	}else{
+		if(IM_DEBUG){
 		printf("GG in exp arg\n\n\n");
+		assert(0);
+		}
 	}
 
 
@@ -940,15 +1074,17 @@ Operand Exp_g(struct Node*cur){
 		//所有vairable注册的时候都要添加到symbol_table里面的va_no里面,这样子就可以查找了;
 		struct Node*tempnode2=getchild(cur,1);
 		if(tempnode2==NULL){
-			printf("ID:%s\n",tempnode1->string_contant);
+		//	printf("ID:%s\n",tempnode1->string_contant);
 			int queryok=0;
 			struct Symbol_node*queryid=query_symbol2(tempnode1->string_contant,&queryok);
 			if(queryok==0)assert(0);
 			//如果是基本变量,那么返回;如果是数组或者结构体,那么感觉最好改成Address然后返回;
 			
 			if(queryid->field.type->kind==ARRAY||queryid->field.type->kind==STRUCTURE){
-				if(queryid->ifaddress==OP_ADDRESS)
-				temp=new_op(OP_VARIABLE,OP_ADDRESS,tempnode1->string_contant);
+				if(queryid->ifaddress==OP_ADDRESS){
+					//printf("id_address in ID\n");
+					temp=new_op(OP_VARIABLE,OP_ADDRESS,tempnode1->string_contant);
+				}
 				else{
 					//不确定;
 					temp=new_op(OP_VARIABLE,OP_VAR,tempnode1->string_contant);
@@ -956,12 +1092,15 @@ Operand Exp_g(struct Node*cur){
 				var_cnt--;
 				temp->no=queryid->var_no;
 				if(queryid->var_no==-1)assert(0);
+			//	printf("varname:%s\n",temp->varname);
+				temp->depth=0;
 				return temp;
 			}else{
 				temp=new_op(OP_VARIABLE,OP_VAR,tempnode1->string_contant);
 				var_cnt--;
 				temp->no=queryid->var_no;
 				if(queryid->var_no==-1)assert(0);
+				temp->depth=0;
 				return temp;
 			}
 			//return temp;
@@ -982,8 +1121,10 @@ Operand Exp_g(struct Node*cur){
 					if(temp!=NULL)
 					new_intercode(IN_WRITE,temp);
 					else{
-						;
+						if(IM_DEBUG){
 						printf("GG in exp\n");
+						assert(0);
+						}
 					}
 					return temp;
 				}
@@ -1017,7 +1158,7 @@ Operand Exp_g(struct Node*cur){
 
 		}
 	}else if(strcheck(tempnode1->name,"INT")){
-		printf("In exp INT:%d\n",tempnode1->int_contant);
+		if(IM_DEBUG)printf("In exp INT:%d\n",tempnode1->int_contant);
 		temp=new_op(OP_CONSTANT,OP_VAR,tempnode1->int_contant);
 		return temp;
 
@@ -1076,7 +1217,10 @@ Operand Exp_g(struct Node*cur){
 				if(op1!=NULL&&op2!=NULL)
 				new_intercode(in_kind,temp,op1,op2);
 				else{
+					if(IM_DEBUG){
 					printf("GG in exp\n");
+					assert(0);
+					}
 				}
 				return temp;
 			}
@@ -1090,7 +1234,10 @@ Operand Exp_g(struct Node*cur){
 				new_intercode(IN_ASSIGN,op1,op2);
 				else{
 				//	assert(0);
+				if(IM_DEBUG){
 					printf("GG in exp\n");
+					assert(0);
+				}
 				}
 			
 				temp=op1;
@@ -1099,108 +1246,195 @@ Operand Exp_g(struct Node*cur){
 		else if(strcheck(tempnode2->name,"DOT")){
 			//需要实现的函数:确定元素位置;
 			//| Exp DOT ID3 结构体; 
+			//返回一个地址;
+		//	printf("structure\n");
 			Operand expop=Exp_g(tempnode1);
+			Operand tempexpop=copyop(expop);
+			//printf("exp ifaddress:%d no:%d\n",expop->ifaddress,expop->no);
 			struct Node* tempnode3=getchild(cur,2);
 			int queryok=0;
 			struct Symbol_node* queryid=query_symbol2(tempnode3->string_contant,&queryok);
 			int offset=queryid->offset;
-			printf("name:%s offset:%d no\n",tempnode3->string_contant,offset);
+		//	printf("name:%s offset:%d no\n",tempnode3->string_contant,offset);
 			//Operand tempop=new_op(OP_VARIABLE,OP_ADDRESS,tempnode3->string_contant);
 			//var_cnt--;
 			//需要找struct的id;
 			
 			//tempop->no=querystruct->var_no;
 			if(offset==0){
-				//temp=expop;
 				Operand ttemp=new_op(OP_TEMPVAR,OP_VAR);
-				new_intercode(IN_ASSIGN,ttemp,expop);
+				if(tempexpop->ifaddress==OP_ADDRESS)
+				tempexpop->ifaddress=OP_VAR;//反正只是地址的计算;
+				else{
+					tempexpop->ifaddress=OP_ADDRESS;
+				}
+				new_intercode(IN_ASSIGN,ttemp,tempexpop);
 				temp=copyop(ttemp);
 				temp->ifaddress=OP_ADDRESS;
+				temp->varname=tempnode3->string_contant;
 				return temp;
 			}else{
 				Operand constantop=new_op(OP_CONSTANT,OP_VAR,offset);
 				Operand ttemp=new_op(OP_TEMPVAR,OP_VAR);
-				if(expop->ifaddress==OP_ADDRESS)expop->ifaddress=OP_ADDRESS;
+			//	Operand tempexpop=copyop(expop);
+				//if(expop->ifaddress=OP_ADDRESS)
+				if(tempexpop->ifaddress==OP_ADDRESS)
+				tempexpop->ifaddress=OP_VAR;//反正只是地址的计算;
 				else{
-					;
+					tempexpop->ifaddress=OP_ADDRESS;
 				}
-				new_intercode(IN_ADD,ttemp,expop,constantop);
+
+				//printf("tempexpop no:%d\n",tempexpop->no);
+				new_intercode(IN_ADD,ttemp,tempexpop,constantop);
+			//	printf("tempexpop ifaddress:%d\n",tempexpop->ifaddress);
 				temp=copyop(ttemp);
 				temp->ifaddress=OP_ADDRESS;
+				temp->varname=tempnode3->string_contant;
 				return temp;
 			}
 			
 		}
 		else if(strcheck(tempnode2->name,"LB")){
 			//Exp LB Exp RB4 
-			struct Node* expnode=tempnode1;
-			while(strcheck(expnode->child->name,"ID")==0){
-				expnode=getchild(expnode,0);
-			}
-			//printf("id name:%s\n\n",expnode->child->name);
-			Operand idop=Exp_g(expnode);//exp->ID
-			int queryok=0;
-			struct Symbol_node* queryid=query_symbol2(expnode->child->string_contant,&queryok);//修改了lab2的部分,现在sturct里面的元素也在symbol table里面了,并且不再加上结构名后缀;
-			Type symboltype=queryid->field.type;
-			Type arraytype=symboltype;
-			while(symboltype->kind==ARRAY){
-				symboltype=symboltype->u.array_.elem;
-			}
-			printf("symbol kind:%d",symboltype->kind);
-			int typesize=gettypesize(symboltype);//array 元素的大小;
-			// printf("type kind:%d %s\n",queryid->field.type->kind,expnode->child->string_contant);
-			printf("array size:%d\n\n",typesize);
-			Operand prevop=copyop(idop);
-			if(prevop->ifaddress==OP_ADDRESS){
-				prevop->ifaddress=OP_VAR;//如果是address了那么就不用转换了;
-			}else{
-				prevop->ifaddress=OP_ADDRESS;//记录的时候需要加&
-			}
-			struct Node*ttempnode1=cur;
-			//对于sturct a [3][4][5];a[1][2][3]; 计算过程应该是:3*size+2*5*size+1*4*5*size;
+		//	return NULL;
+		//	printf("herere\n\n");
+			Operand expop1=copyop(Exp_g(tempnode1));
+		//	printf("expop1 ifaddress:%d",expop1->ifaddress);
+			int depth=expop1->depth;
+
+			int query_ok=0;
+			struct Symbol_node *queryid=query_symbol2(expop1->varname,&query_ok);
+			Type ttemptype=queryid->field.type;
+			Type temptype=ttemptype;
 			int cnt=0;
-			Type oriarraytype=arraytype;
-			while(arraytype->kind==ARRAY){
+			while(temptype->kind==ARRAY){
 				cnt+=1;
-				printf("size:%d\n",arraytype->u.array_.size);
-				arraytype=arraytype->u.array_.elem;
+			//	printf("size:%d\n",temptype->u.array_.size);
+				temptype=temptype->u.array_.elem;
 			}
-			int * arrayd=(int*)(malloc)(sizeof(int)*(cnt+1));
+		//	printf("typekind:%d\n",temptype->kind);
+			int typesize=gettypesize(temptype);
+		//	printf("cnt:%d\n",cnt);
+			int*arraysize=(int*)malloc(sizeof(int)*(cnt+1));
 			cnt=0;
-			arraytype=oriarraytype;
-			while(arraytype->kind==ARRAY){
-				arrayd[cnt]=arraytype->u.array_.size;
+			temptype=ttemptype;
+			while(temptype->kind==ARRAY){
+				arraysize[cnt]=temptype->u.array_.size;
 				cnt+=1;
-				//printf("size:%d\n",arraytype->u.array_.size);
-				arraytype=arraytype->u.array_.elem;
+				temptype=temptype->u.array_.elem;
 			}
-			for(int i=0;i<cnt;i++){
-				printf("arrayd:%d\n",arrayd[i]);
+		//	printf("cnt:%d\n",cnt);
+			int ptr=cnt-1;
+			int tempdepth=cnt-depth-1;
+			int offset=1;
+			while(tempdepth){
+				offset*=arraysize[ptr];
+				tempdepth-=1;
+				ptr-=1;
 			}
+		//	printf("offset:%d\n",offset);
+			free(arraysize);
+			offset=offset*typesize;//得到最终偏移量,还需要乘[exp];
+
+			struct Node*tempnode3=getchild(cur,2);
+			Operand expop2=Exp_g(tempnode3);
+			
+			Operand tempop1=new_op(OP_TEMPVAR,OP_VAR);
+			Operand constantop1=new_op(OP_CONSTANT,OP_VAR,offset);
+			new_intercode(IN_MUL,tempop1,expop2,constantop1);
+
+			Operand tempop2=new_op(OP_TEMPVAR,OP_VAR);
+			tempop2->varname=expop1->varname;
+			tempop2->depth=depth+1;
+			//printf("expkind:%d",expop1->kind);
+			//temp=NULL;
+			if(depth==0&&expop1->ifaddress==OP_VAR){
+				expop1->ifaddress=OP_ADDRESS;
+			}else{
+				expop1->ifaddress=OP_VAR;
+			}
+			new_intercode(IN_ADD,tempop2,expop1,tempop1);
+		 // printf("tempop2depth:%d,cnt:%d\n",tempop2->depth,cnt);
+
+			temp=copyop(tempop2);
+			if(tempop2->depth==cnt){
+				temp->ifaddress=OP_ADDRESS;
+			}
+
+
+			return temp;
+			// //循环不可为,还是用迭代;
+			// struct Node* expnode=tempnode1;
+			// while(strcheck(expnode->child->name,"ID")==0){
+			// 	expnode=getchild(expnode,0);
+			// }
+			// //printf("id name:%s\n\n",expnode->child->name);
+			// Operand idop=Exp_g(expnode);//exp->ID
+			// int queryok=0;
+			// struct Symbol_node* queryid=query_symbol2(expnode->child->string_contant,&queryok);//修改了lab2的部分,现在sturct里面的元素也在symbol table里面了,并且不再加上结构名后缀;
+			// Type symboltype=queryid->field.type;
+			// Type arraytype=symboltype;
+			// while(symboltype->kind==ARRAY){
+			// 	symboltype=symboltype->u.array_.elem;
+			// }
+			// if(IM_DEBUG)printf("symbol kind:%d",symboltype->kind);
+			// int typesize=gettypesize(symboltype);//array 元素的大小;
+			// printf("type kind:%d %s\n",queryid->field.type->kind,expnode->child->string_contant);
+			// if(IM_DEBUG)printf("array size:%d\n\n",typesize);
+			// Operand prevop=copyop(idop);
+			// if(prevop->ifaddress==OP_ADDRESS){
+			// 	//printf("herer\n");
+			// 	prevop->ifaddress=OP_VAR;//如果是address了那么就不用转换了;
+			// }else{
+			// 	prevop->ifaddress=OP_ADDRESS;//记录的时候需要加&
+			// }
+			// struct Node*ttempnode1=cur;
+			// //对于sturct a [3][4][5];a[1][2][3]; 计算过程应该是:3*size+2*5*size+1*4*5*size;
+			// int cnt=0;
+			// Type oriarraytype=arraytype;
+			// while(arraytype->kind==ARRAY){
+			// 	cnt+=1;
+			// 	if(IM_DEBUG)printf("size:%d\n",arraytype->u.array_.size);
+			// 	arraytype=arraytype->u.array_.elem;
+			// }
+			// int * arrayd=(int*)(malloc)(sizeof(int)*(cnt+1));
+			// cnt=0;
+			// arraytype=oriarraytype;
+			// while(arraytype->kind==ARRAY){
+			// 	arrayd[cnt]=arraytype->u.array_.size;
+			// 	cnt+=1;
+			// 	//printf("size:%d\n",arraytype->u.array_.size);
+			// 	arraytype=arraytype->u.array_.elem;
+			// }
+			// if(IM_DEBUG){
+			// 	for(int i=0;i<cnt;i++){
+			// 		printf("arrayd:%d\n",arrayd[i]);
+			// 	}
+			// }
 			
 
-			while(strcheck(ttempnode1->child->name,"ID")==0){
-				struct Node*expnode=getchild(ttempnode1,2);
-				if(strcheck(expnode->name,"Exp")){
-					Operand op1=Exp_g(expnode);
-					Operand op2=new_op(OP_CONSTANT,OP_VAR,typesize);
-					printf("op2constant:%d\n",op1->value);
-					Operand op3=new_op(OP_TEMPVAR,OP_VAR);
-					new_intercode(IN_MUL,op3,op2,op1);
-					Operand op4=new_op(OP_TEMPVAR,OP_VAR);
-					new_intercode(IN_ADD,op4,prevop,op3);
-					prevop=op4;
-				}
-				ttempnode1=getchild(ttempnode1,0);
-				//arraytype=arraytype->u.array_.elem;
-				//printf("arraytypesize:%d",arraytype->u.array_.size);
-				typesize*=arrayd[cnt-1];
-				cnt-=1;
-				;
-			}
-			temp=copyop(prevop);
-			temp->ifaddress=OP_ADDRESS;// 存疑; 此时的temp是地址;
-			return temp;
+			// while(strcheck(ttempnode1->child->name,"ID")==0){
+			// 	struct Node*expnode=getchild(ttempnode1,2);
+			// 	if(strcheck(expnode->name,"Exp")){
+			// 		Operand op1=Exp_g(expnode);
+			// 		Operand op2=new_op(OP_CONSTANT,OP_VAR,typesize);
+			// 		if(IM_DEBUG)printf("op2constant:%d\n",op1->value);
+			// 		Operand op3=new_op(OP_TEMPVAR,OP_VAR);
+			// 		new_intercode(IN_MUL,op3,op2,op1);
+			// 		Operand op4=new_op(OP_TEMPVAR,OP_VAR);
+			// 		new_intercode(IN_ADD,op4,prevop,op3);
+			// 		prevop=op4;
+			// 	}
+			// 	ttempnode1=getchild(ttempnode1,0);
+			// 	//arraytype=arraytype->u.array_.elem;
+			// 	//printf("arraytypesize:%d",arraytype->u.array_.size);
+			// 	typesize*=arrayd[cnt-1];
+			// 	cnt-=1;
+			// 	;
+			// }
+			// temp=copyop(prevop);
+			// temp->ifaddress=OP_ADDRESS;// 存疑; 此时的temp是地址;
+			// return temp;
 
 
 
@@ -1318,7 +1552,7 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 				Operand op1=Exp_g(tempnode1);
 				struct Node*tempnode3=getchild(cur,2);
 				Operand op2=Exp_g(tempnode3);
-				printf("IFGOTO RELOP: %s\n",tempnode2->string_contant);
+
 				if(label_true!=NULL&&label_false!=NULL){
 					if(op1!=NULL)
 					new_intercode(IN_IFGOTO,op1,tempnode2->string_contant,op2,label_true);
@@ -1340,7 +1574,10 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 				if(op1!=NULL&&op2!=NULL)
 				new_intercode(in_kind,result,op1,op2);
 				else{
-					printf("GG in cond\n");
+					if(IM_DEBUG){
+						printf("GG in cond\n");
+						assert(0);
+					}
 				}
 				if(label_true!=NULL&&label_false!=NULL){
 					new_intercode(IN_IFGOTO,result,"!=",zero,label_true);
@@ -1398,8 +1635,6 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 			struct Node*expnode=getchild(cur,1);
 			Cond_g(expnode,label_true,label_false);
 		}else if(strcheck(tempnode1->name,"ID")){
-			;//To be done
-		//	printf("cond ID\n");
 			Operand op=Exp_g(cur);
 			if(label_true!=NULL&&label_false!=NULL){
 				new_intercode(IN_IFGOTO,op,"!=",zero,label_true);
@@ -1411,8 +1646,6 @@ int Cond_g(struct Node* cur,Operand label_true,Operand label_false){
 			}
 
 		}else if(strcheck(tempnode1->name,"INT")){
-			;//To be done
-			//printf("cond INT\n");
 			//如果>0 那么就去true 否则去false
 			//不是很确定;
 			if(label_true!=NULL&&tempnode1->int_contant){

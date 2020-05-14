@@ -1,1 +1,8 @@
-addv0t1&v0t2&v0#12t0*t1*t2t0testfuncv1v2#0mainv4v5v6t3&v4*t3#1t4&v4#12*t4#2v4t5addv3t5v3#0
+FUNCTION main : 
+READ t0
+v0 := t0
+IF v0 == #0 GOTO label0
+v1 := #1
+IF v1 == #0 GOTO label0
+WRITE v1
+LABEL label0 : 
