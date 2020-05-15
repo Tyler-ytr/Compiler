@@ -1,0 +1,43 @@
+struct omg{
+	int omg114514;
+};
+struct Detail {
+    int score;
+    int name;
+	struct omg omg114513;
+};
+struct ScoreClass {
+    struct Detail scoreDetail[100];
+    int num;
+};
+struct nightmare{
+	struct ScoreClass night;
+};
+/*
+int average(struct ScoreClass class) {
+    int scoreSum = 0;
+    int i = 0; 
+    int N = class.num;
+    while (i < N) {
+        scoreSum = class.scoreDetail[i].omg114513.omg114514 + scoreSum;
+        i = i + 1;
+    }
+    return scoreSum / N;
+}*/
+int main() {
+	struct nightmare NIGHTMARE;
+    struct ScoreClass classInit;
+    int result = 0, initN = 10;
+    int j = 0;
+    classInit.num = initN;
+	NIGHTMARE.night.scoreDetail[2].omg114513.omg114514=1;
+	/*
+    while (j < initN) {
+        classInit.scoreDetail[j].omg114513.omg114514 = (j + 1) * (j + 1);
+        j = j + 1;
+    }
+    result = average(classInit);
+    
+	write(result);*/
+    return 0;
+}

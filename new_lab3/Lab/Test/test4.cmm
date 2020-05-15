@@ -1,13 +1,35 @@
-int add(int temp[2])
+/*int add(int temp[2])
 {
 return (temp[0] + temp[1]);
 }
-
+int fun(){
+	return -1;
+}
+int fun1(int a){
+	return a;
+}
+struct havehavefun{
+	int fund;
+};
+struct havefun{
+	int funa;
+	int funb;
+	int func[5][4][3];
+	struct havehavefun havefun;
+};
 int main()
 {
 int op[2];
 int r[1][2];
+int abc[7][8][9];
+struct havefun yes[5][6][7];
 int i = 0, j = 0;
+int ttt;
+ttt=fun();
+ttt=fun1(2);
+abc[3][4][5]=4;
+yes[4][3][2].funa=2;
+yes[4][3][2].func[1][2][2]=3;
 while (i < 2)
 {
 while (j < 2)
@@ -16,9 +38,18 @@ op[j] = i + j;
 j = j + 1;
 }
 r[0][i] = add(op);
+
 write(r[0][i]);
 i = i + 1;
 j = 0;
 }
+
 return 0;
+}*/
+/*
+int main(){
+	int a[3][4][5];
+	int c=2;
+	//a[1][2][3]=9;
 }
+*/

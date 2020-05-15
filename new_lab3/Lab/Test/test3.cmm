@@ -1,18 +1,30 @@
+
 struct Operands
 {
-int o1;
-int o2;
+int o1,o99,o10000;
+int o2,o9996;
+int o98[5];
 };
-
+struct Operands2{
+	struct Operands o3;
+	struct Operands o4;
+	int o5;
+};
 int add(struct Operands temp)
 {
 return (temp.o1 + temp.o2);
 }
+int testfunc(int aaa,int bbb){
+	return 0;
+}
+
 
 int main()
 {
 int n;
 struct Operands op;
+struct Operands op2[5];
+struct Operands2 op3;
 op.o1 = 1;
 op.o2 = 2;
 n = add(op);

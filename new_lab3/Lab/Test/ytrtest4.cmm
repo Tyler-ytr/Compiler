@@ -1,0 +1,18 @@
+int test(int ab){
+	write(ab);
+	return 0;
+}
+int test2(int abc[5]){
+	write(abc[0]);
+	return 0;
+}
+int main(){
+	int a[5][5];
+	a[1][0]=1;
+	test(a[1][0]);
+	test2(a[1]);
+	write(a[1][0]);
+	
+	return 0;
+
+}

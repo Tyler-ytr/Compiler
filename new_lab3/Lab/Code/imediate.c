@@ -987,9 +987,6 @@ Operand VarDec_g(struct Node*cur){
 		int arraysize=gettypesize(queryid->field.type);
 		Operand op2=new_op(OP_CONSTANT,OP_VAR,arraysize);
 		new_intercode(IN_DEC,result,op2);
-
-
-
 		
 	}
 
