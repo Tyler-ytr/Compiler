@@ -995,7 +995,17 @@ Operand VarDec_g(struct Node*cur){
 
 	return result;
 }
+int getarraydepth(struct Symbol_node*arraynode){
+	int cnt=0;
+	Type temp=arraynode->field.type;
+	while(temp->kind==ARRAY){
+		cnt+=1;
+		temp=temp->u.array_.elem;
+	}
+	//printf("cnt:%d\n",cnt);
+	return cnt;
 
+}
 
 void Arg_g(struct Node*cur,FieldList param){
 	// Args -> Exp COMMA Args
@@ -1005,13 +1015,30 @@ void Arg_g(struct Node*cur,FieldList param){
 	//printf("In args\n\n\n");
 	//递归检查参数;
 	struct Node*tempnode1=getchild(cur,0);
-	if(Exp_g(tempnode1)!=NULL){
+
 	Operand tempop=Exp_g(tempnode1);//使用局部变量防止修改原来的值;
-	if(temp_cnt>200)printf("ori value:%d\n",tempop->value);
 	Operand op=copyop(tempop);
-	
+
 	if(param->type->kind==STRUCTURE||param->type->kind==ARRAY){
-		if(op->ifaddress==OP_ADDRESS){
+				int flag=0;
+			if(param->type->kind==ARRAY){
+		
+				int queryok=0;
+				char*queryname=op->varname;
+				struct Symbol_node *querynode=query_symbol2(queryname,&queryok);
+				//printf("name:%s depth:%d\n",op->varname,op->depth);
+				int arraydepth=getarraydepth(querynode);
+				if(op->depth<arraydepth){
+					flag=1;
+				}
+				if(op->depth==0){
+					flag=0;//如果depth是0,那就是原来的判断方式,不需要修改
+				}
+
+			}
+		if(flag==1){
+			op->ifaddress=OP_VAR;
+		}else if(op->ifaddress==OP_ADDRESS){
 			
 			op->ifaddress=OP_VAR;//如果是address就不用专门的&了
 		}else{
@@ -1025,17 +1052,7 @@ void Arg_g(struct Node*cur,FieldList param){
 	struct Node*tempnode3=getchild(cur,2);
 		Arg_g(tempnode3,param->tail);
 	}
-	// if(op!=NULL)
 	new_intercode(IN_ARG,op);
-	// else{
-	// 	printf("GG in exp\n");
-	// }
-	}else{
-		if(IM_DEBUG){
-		printf("GG in exp arg\n\n\n");
-		assert(0);
-		}
-	}
 
 
 	;
@@ -1151,7 +1168,7 @@ Operand Exp_g(struct Node*cur){
 			Operand functionname=new_op(OP_FUNCTION,OP_VAR,tempnode1->string_contant);
 			if(strcheck(tempnode3->name,"RP")){
 				//ID LP RP, CALL function.name
-				printf("call1:%s\n",functionname->funcname);
+			//	printf("call1:%s\n",functionname->funcname);
 				new_intercode(IN_CALL,temp,functionname);
 				return temp;
 			}else if(strcheck(tempnode3->name,"Args")){
@@ -1160,7 +1177,7 @@ Operand Exp_g(struct Node*cur){
 				struct Symbol_node*queryid=query_symbol2(tempnode1->string_contant,&queryok);
 				//printf("Using arg\n");
 				Arg_g(tempnode3,queryid->field.type->u.function.params);
-				if(temp_cnt>200)printf("call2:%s\n",functionname->funcname);
+			//	if(temp_cnt>200)printf("call2:%s\n",functionname->funcname);
 				new_intercode(IN_CALL,temp,functionname);
 				return temp;
 			}
