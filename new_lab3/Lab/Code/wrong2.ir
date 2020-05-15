@@ -1,0 +1,422 @@
+FUNCTION mod : 
+PARAM v0
+PARAM v1
+t2 := v0 / v1
+t1 := t2 * v1
+t0 := v0 - t1
+RETURN t0
+FUNCTION times : 
+PARAM v2
+PARAM v3
+PARAM v4
+v5 := #0
+LABEL label0 : 
+IF v3 == #0 GOTO label1
+ARG #2 
+ARG v3 
+t3 := CALL mod
+IF t3 == #0 GOTO label2
+t4 := v5 + v2
+v5 := t4
+IF v5 < v4 GOTO label3
+t5 := v5 - v4
+v5 := t5
+LABEL label3 : 
+LABEL label2 : 
+t6 := v2 + v2
+v2 := t6
+IF v2 < v4 GOTO label4
+t7 := v2 - v4
+v2 := t7
+LABEL label4 : 
+t8 := v3 / #2
+v3 := t8
+GOTO label0
+LABEL label1 : 
+RETURN v5
+FUNCTION prf : 
+PARAM v6
+PARAM v7
+ARG #1000000007 
+ARG v7 
+ARG v6 
+t9 := CALL times
+v8 := t9
+t10 := v8 + #2987
+v8 := t10
+IF v8 < #1000000007 GOTO label5
+t11 := v8 - #1000000007
+v8 := t11
+LABEL label5 : 
+ARG #1000000007 
+ARG v8 
+ARG v8 
+t12 := CALL times
+v8 := t12
+t13 := v8 + v6
+v8 := t13
+IF v8 < #1000000007 GOTO label6
+t14 := v8 - #1000000007
+v8 := t14
+LABEL label6 : 
+t15 := v8 + v7
+v8 := t15
+IF v8 < #1000000007 GOTO label7
+t16 := v8 - #1000000007
+v8 := t16
+LABEL label7 : 
+t17 := v8 + v7
+v8 := t17
+IF v8 < #1000000007 GOTO label8
+t18 := v8 - #1000000007
+v8 := t18
+LABEL label8 : 
+RETURN v8
+FUNCTION modify_array : 
+PARAM v9
+t20 := #0 * #4
+t21 := v9 + t20
+t22 := #0 * #4
+t23 := v9 + t22
+t24 := #4 * #4
+t25 := v9 + t24
+t26 := #4 * #4
+t27 := v9 + t26
+ARG *t27 
+ARG *t23 
+t19 := CALL prf
+v10 := t19
+t29 := #2 * #4
+t30 := v9 + t29
+t31 := #2 * #4
+t32 := v9 + t31
+t33 := #3 * #4
+t34 := v9 + t33
+t35 := #3 * #4
+t36 := v9 + t35
+ARG *t36 
+ARG *t32 
+t28 := CALL prf
+v11 := t28
+t37 := #0 * #4
+t38 := v9 + t37
+ARG v11 
+ARG v10 
+t39 := CALL prf
+*t38 := t39
+t40 := #1 * #4
+t41 := v9 + t40
+t43 := #0 * #4
+t44 := v9 + t43
+t45 := #0 * #4
+t46 := v9 + t45
+ARG *t46 
+ARG v10 
+t42 := CALL prf
+*t41 := t42
+t47 := #2 * #4
+t48 := v9 + t47
+t50 := #1 * #4
+t51 := v9 + t50
+t52 := #1 * #4
+t53 := v9 + t52
+ARG *t53 
+ARG v11 
+t49 := CALL prf
+*t48 := t49
+t54 := #3 * #4
+t55 := v9 + t54
+t57 := #2 * #4
+t58 := v9 + t57
+t59 := #2 * #4
+t60 := v9 + t59
+ARG *t60 
+ARG v10 
+t56 := CALL prf
+*t55 := t56
+t61 := #4 * #4
+t62 := v9 + t61
+t64 := #3 * #4
+t65 := v9 + t64
+t66 := #3 * #4
+t67 := v9 + t66
+ARG *t67 
+ARG v11 
+t63 := CALL prf
+*t62 := t63
+RETURN #0
+FUNCTION modify_struct : 
+PARAM v12
+v13 := #0
+v14 := #0
+v15 := #1
+t68 := v12
+t70 := v12 + #4
+t71 := #0 * #100
+t72 := t70 + t71
+t73 := #0 * #20
+t74 := t72 + t73
+t75 := #0 * #4
+t76 := t74 + t75
+t77 := v12 + #4
+t78 := #0 * #100
+t79 := t77 + t78
+t80 := #0 * #20
+t81 := t79 + t80
+t82 := #0 * #4
+t83 := t81 + t82
+t84 := v12 + #4
+t85 := #2 * #100
+t86 := t84 + t85
+t87 := #3 * #20
+t88 := t86 + t87
+t89 := #3 * #4
+t90 := t88 + t89
+t91 := v12 + #4
+t92 := #2 * #100
+t93 := t91 + t92
+t94 := #3 * #20
+t95 := t93 + t94
+t96 := #3 * #4
+t97 := t95 + t96
+ARG *t97 
+ARG *t83 
+t69 := CALL prf
+*t68 := t69
+LABEL label9 : 
+IF v13 >= #5 GOTO label10
+LABEL label11 : 
+IF v14 >= #5 GOTO label12
+LABEL label13 : 
+IF v15 >= #5 GOTO label14
+IF v15 <= #0 GOTO label15
+t98 := v12 + #4
+t99 := v13 * #100
+t100 := t98 + t99
+t101 := v14 * #20
+t102 := t100 + t101
+t103 := v15 * #4
+t104 := t102 + t103
+t106 := v12
+t107 := v12
+t108 := v12 + #4
+t109 := v13 * #100
+t110 := t108 + t109
+t111 := v14 * #20
+t112 := t110 + t111
+t113 := v15 - #1
+t114 := t113 * #4
+t115 := t112 + t114
+t116 := v12 + #4
+t117 := v13 * #100
+t118 := t116 + t117
+t119 := v14 * #20
+t120 := t118 + t119
+t121 := v15 - #1
+t122 := t121 * #4
+t123 := t120 + t122
+ARG *t123 
+ARG *t107 
+t105 := CALL prf
+*t104 := t105
+GOTO label16
+LABEL label15 : 
+IF v14 <= #0 GOTO label17
+t124 := v12 + #4
+t125 := v13 * #100
+t126 := t124 + t125
+t127 := v14 * #20
+t128 := t126 + t127
+t129 := v15 * #4
+t130 := t128 + t129
+t132 := v12
+t133 := v12
+t134 := v12 + #4
+t135 := v13 * #100
+t136 := t134 + t135
+t137 := v14 - #1
+t138 := t137 * #20
+t139 := t136 + t138
+t140 := #4 * #4
+t141 := t139 + t140
+t142 := v12 + #4
+t143 := v13 * #100
+t144 := t142 + t143
+t145 := v14 - #1
+t146 := t145 * #20
+t147 := t144 + t146
+t148 := #4 * #4
+t149 := t147 + t148
+ARG *t149 
+ARG *t133 
+t131 := CALL prf
+*t130 := t131
+GOTO label18
+LABEL label17 : 
+t150 := v12 + #4
+t151 := v13 * #100
+t152 := t150 + t151
+t153 := v14 * #20
+t154 := t152 + t153
+t155 := v15 * #4
+t156 := t154 + t155
+t158 := v12
+t159 := v12
+t160 := v12 + #4
+t161 := v13 - #1
+t162 := t161 * #100
+t163 := t160 + t162
+t164 := #4 * #20
+t165 := t163 + t164
+t166 := #4 * #4
+t167 := t165 + t166
+t168 := v12 + #4
+t169 := v13 - #1
+t170 := t169 * #100
+t171 := t168 + t170
+t172 := #4 * #20
+t173 := t171 + t172
+t174 := #4 * #4
+t175 := t173 + t174
+ARG *t175 
+ARG *t159 
+t157 := CALL prf
+*t156 := t157
+LABEL label18 : 
+LABEL label16 : 
+t176 := v15 + #1
+v15 := t176
+GOTO label13
+LABEL label14 : 
+t177 := v14 + #1
+v14 := t177
+v15 := #0
+GOTO label11
+LABEL label12 : 
+t178 := v13 + #1
+v13 := t178
+v15 := #0
+v14 := v15
+GOTO label9
+LABEL label10 : 
+RETURN #0
+FUNCTION main : 
+READ t179
+v16 := t179
+DEC v18 500
+DEC v25 504
+v19 := #0
+LABEL label19 : 
+IF v19 >= #5 GOTO label20
+v20 := #0
+LABEL label21 : 
+IF v20 >= #5 GOTO label22
+v21 := #0
+LABEL label23 : 
+IF v21 >= #5 GOTO label24
+t180 := v19 * #100
+t181 := &v18 + t180
+t182 := v20 * #20
+t183 := t181 + t182
+t184 := v21 * #4
+t185 := t183 + t184
+t186 := &v25 + #4
+t187 := v19 * #100
+t188 := t186 + t187
+t189 := v20 * #20
+t190 := t188 + t189
+t191 := v21 * #4
+t192 := t190 + t191
+*t192 := #0
+*t185 := *t192
+t193 := v21 + #1
+v21 := t193
+GOTO label23
+LABEL label24 : 
+t194 := v20 + #1
+v20 := t194
+GOTO label21
+LABEL label22 : 
+t195 := v19 + #1
+v19 := t195
+GOTO label19
+LABEL label20 : 
+t196 := &v25
+*t196 := #0
+ARG #3 
+ARG v16 
+t197 := CALL mod
+IF t197 != #0 GOTO label25
+v17 := #108
+GOTO label26
+LABEL label25 : 
+ARG #3 
+ARG v16 
+t198 := CALL mod
+IF t198 != #1 GOTO label27
+v17 := #505
+GOTO label28
+LABEL label27 : 
+v17 := #983
+LABEL label28 : 
+LABEL label26 : 
+LABEL label29 : 
+ARG #947 
+ARG v16 
+t199 := CALL mod
+IF t199 == #6 GOTO label30
+ARG v17 
+ARG v16 
+t200 := CALL prf
+v16 := t200
+ARG v17 
+ARG v16 
+t201 := CALL prf
+v17 := t201
+GOTO label29
+LABEL label30 : 
+ARG #1009 
+ARG v17 
+t202 := CALL mod
+v17 := t202
+WRITE v16
+t203 := #0
+WRITE v17
+t204 := #0
+ARG v17 
+ARG v16 
+t205 := CALL prf
+v22 := t205
+WRITE v22
+t206 := #0
+ARG v16 
+ARG v22 
+t207 := CALL prf
+v24 := t207
+WRITE #99
+t208 := #0
+WRITE v24
+t209 := #0
+WRITE v22
+t210 := #0
+WRITE v16
+t211 := #0
+WRITE #99
+t212 := #0
+ARG v16 
+ARG v22 
+t214 := CALL prf
+v16 := t214
+ARG v16 
+ARG v22 
+t215 := CALL prf
+v16 := t215
+ARG #2 
+ARG v16 
+t213 := CALL mod
+v23 := t213
+WRITE v23
+t216 := #0
+WRITE v16
+t217 := #0
+RETURN #0

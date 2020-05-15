@@ -1007,7 +1007,7 @@ void Arg_g(struct Node*cur,FieldList param){
 	struct Node*tempnode1=getchild(cur,0);
 	if(Exp_g(tempnode1)!=NULL){
 	Operand tempop=Exp_g(tempnode1);//使用局部变量防止修改原来的值;
-	if(IM_DEBUG)printf("ori value:%d",tempop->value);
+	if(temp_cnt>200)printf("ori value:%d\n",tempop->value);
 	Operand op=copyop(tempop);
 	
 	if(param->type->kind==STRUCTURE||param->type->kind==ARRAY){
@@ -1151,14 +1151,16 @@ Operand Exp_g(struct Node*cur){
 			Operand functionname=new_op(OP_FUNCTION,OP_VAR,tempnode1->string_contant);
 			if(strcheck(tempnode3->name,"RP")){
 				//ID LP RP, CALL function.name
+				printf("call1:%s\n",functionname->funcname);
 				new_intercode(IN_CALL,temp,functionname);
 				return temp;
 			}else if(strcheck(tempnode3->name,"Args")){
 			//| ID LP Args RP 4函数
 				int queryok=0;
 				struct Symbol_node*queryid=query_symbol2(tempnode1->string_contant,&queryok);
-				
+				//printf("Using arg\n");
 				Arg_g(tempnode3,queryid->field.type->u.function.params);
+				if(temp_cnt>200)printf("call2:%s\n",functionname->funcname);
 				new_intercode(IN_CALL,temp,functionname);
 				return temp;
 			}
