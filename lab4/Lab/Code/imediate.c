@@ -10,6 +10,7 @@ struct Intercodes*inter_tail=NULL;
 int label_cnt=0;
 int var_cnt=0;//v1,v2,...
 int temp_cnt=0;//t1,t2,...
+int dec_cnt=0;//用来记录最后一个被dec的var;用于lab4
 const int MAX_DEPTH=2147483646;
 
 //////////////
@@ -315,7 +316,9 @@ void fprintintercode(FILE*fp){
 	// 	}
 	// 	printf("---------------intercode above-----------------\n");
 	// }
-
+	FILE* tempfp = fopen("out1.ir", "wt+");
+	fp=tempfp;
+	printf("-----记得注释fprintintercode-----\n");
 	struct Intercodes *temp=inter_head->next;
 	while(temp!=inter_head){
 		//printf("%d\n",temp->code.kind);
@@ -376,10 +379,13 @@ void fprintintercode(FILE*fp){
 				break;
 			}
 			case IN_DEC:{
+				dec_cnt=temp->code.u.two.left->no;
+				//printf("dec:%d\n",dec_cnt);
 				fprintf(fp,"DEC ");
 				printop(temp->code.u.two.left,fp);
 				fprintf(fp," %d",temp->code.u.two.right->value);
 				fprintf(fp,"\n");
+				
 				break;
 			}
 			case IN_CALL:{
@@ -627,7 +633,8 @@ int intermediate_generate(struct Node*cur,FILE*fp)
 	Program_g(cur);
 if(IM_DEBUG)	show_global_table();
 if(IM_DEBUG)	show_struct_table();
-	fprintintercode(fp);
+	fprintintercode(fp); //lab4不需要打印intercode辣
+
 }
 int Program_g(struct Node* cur){
 	

@@ -42,6 +42,7 @@ if(lexError==0&&syntaxError==0){
 semantic_check(root);
 //printf("success_g:%d\n",success_g);
 intermediate_generate(root,fp);
+s_code_generate(fp);
 }
 return 0;
 /*

@@ -101,7 +101,7 @@ int Dec_g(struct Node*cur);
 Operand VarDec_g(struct Node*cur);
 Operand Exp_g(struct Node*cur);
 int Stmt_g(struct Node* cur);
-
+void printop(Operand op,FILE*fp);
 int Cond_g(struct Node* cur,Operand label_true,Operand label_false);
 
 #endif
