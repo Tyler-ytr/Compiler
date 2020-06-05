@@ -13,11 +13,11 @@
 typedef struct Operand_* Operand;
 struct Operand_{
 	enum{
-			OP_VARIABLE,
-			OP_CONSTANT,
-			OP_FUNCTION,
-			OP_TEMPVAR,
-			OP_LABEL
+			OP_VARIABLE=0,
+			OP_CONSTANT=1,
+			OP_FUNCTION=2,
+			OP_TEMPVAR=3,
+			OP_LABEL=4
 			//To be done
 		}kind;
 	enum{

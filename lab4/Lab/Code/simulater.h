@@ -3,16 +3,32 @@
 
 #include "common.h"
 #include "imediate.h"
+#include "symbol_table.h"
 struct Register{
 	int state;//表示状态 0为空闲1为使用
 	char *name;//表示名字
 };
-struct Opdict{
-	//变量和寄存器的字典;
-	int reg;//寄存器编号;
-	Operand op;//OP指针
-	struct Opdict *next;//链表结构;
+// struct Opdict{
+// 	//变量和寄存器的字典;
+// 	int reg;//寄存器编号;
+// 	Operand op;//OP指针
+// 	struct Opdict *next;//链表结构;
+// };
+struct stack_node{
+	int offset;
+	// enum{
+	// 	S_VARIABLE=0,
+	// 	S_TEMPVAR=3
+	// }kind;
+	int kind;
+	int no;
+	struct stack_node*next;
 };
+struct pid_stack{
+	struct stack_node*fp;
+	struct pid_stack*next;
+};
+
 void s_code_generate(FILE* fp);
 
 #endif

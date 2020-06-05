@@ -1,13 +1,20 @@
 #include "simulater.h"
 extern struct Intercodes*inter_head;
 struct Register _reg[32];//寄存器数组.保存寄存器编号,名字和状态
-struct Opdict * dict_head;//Op与寄存器的关系,head
-struct Opdict * dict_cur;//当前状态
 extern int var_cnt;
 extern int temp_cnt;
 extern int label_cnt;
 extern int dec_cnt;
 extern void printop(Operand op,FILE*fp);
+extern struct Intercodes*inter_head;
+int func_state=0;
+char*fun_name=NULL;//当前函数的名字,在main中为null
+struct stack_node*stack_sp;
+struct stack_node*stack_fp;
+struct stack_node*stack_head;
+
+struct pid_stack*pid_head;
+struct pid_stack*pid_cur;
 
 //朴素 从内存取出到t0,t1,t2(8,9,10)然后计算然后放回去;其余寄存器作为中间变量使用;
 // t4(12) 存放地址;
@@ -89,6 +96,98 @@ void init_data(FILE *fp){
 	printf("var_cnt:%d, temp_cnt:%d dec_cnt:%d\n",var_cnt,temp_cnt,dec_cnt);
 	//[0,var_cnt),[0,temp_cnt)
 }
+int find_op(Operand cur){//对于 variable tempvar 在stack中寻找来确定要不要开坑;找不到是0 找到是1
+	struct stack_node* tempnode=stack_fp;
+	int kind=cur->kind;
+	int no=cur->no;
+	int success=0;
+//	printf("kind：%d no:%d\n",kind,no);
+	while(tempnode!=NULL){
+		if(tempnode->no==no&&tempnode->kind==kind){
+			success=1;
+			break;
+		}
+
+		tempnode=tempnode->next;
+	}
+	return success;
+}
+void show_stack(){
+	printf("\n------stack-blow------\n");
+	struct stack_node *temp=stack_head->next;
+	while(temp!=NULL){
+		if(temp->kind==OP_VARIABLE){
+			printf("v%d offset:%d\n",temp->no,temp->offset);
+		}else{
+			printf("t%d offset:%d\n",temp->no,temp->offset);
+		}
+		temp=temp->next;
+	}
+
+	printf("-----------------------\n\n");
+
+}
+
+void push_pid(struct stack_node*fp){
+	struct pid_stack *temp=(struct pid_stack*)malloc(sizeof(struct pid_stack));
+	temp->fp=fp;
+	temp->next=NULL;
+	pid_cur->next=temp;
+	pid_cur=temp;
+}
+void pop_pid(){
+	struct pid_stack* temp=pid_head;
+	while(1){
+		if(temp==NULL){
+			break;
+		}
+		if(temp->next==pid_cur){
+			temp->next=NULL;
+			free(pid_cur);
+			pid_cur=temp;
+			break;
+		}
+		temp=temp->next;
+	}
+}
+void push_op(Operand op,int offset){
+	struct stack_node *temp=(struct stack_node*)(malloc(sizeof(struct stack_node)));
+	int kind=op->kind;
+	int no=op->no;
+	temp->kind=kind;
+	temp->no=op->no;
+	temp->offset=offset;
+	temp->next=NULL;
+	stack_sp->next=temp;
+	stack_sp=temp;
+}
+void pop_op(){
+	//删除->next=fp之后的所有内容;
+	//从pid_stack中取出新的fp;
+	struct stack_node*temp=stack_head;
+	int success=0;
+	while(1){
+		if(temp==NULL){
+			break;
+		}
+		if(temp->next==stack_fp){
+			temp->next=NULL;
+			//可以选择free 等修改;
+			success=1;
+			break;
+		}
+		temp=temp->next;
+	}
+	if(success==0){
+		printf("bug in pop_op!\n");
+		assert(0);
+	}
+	stack_fp=pid_cur->fp;
+	stack_sp=temp;
+	pop_pid();
+}
+
+
 void init_code(FILE*fp){
 	//函数段初始化;read and write
 	//read
@@ -109,44 +208,55 @@ void init_code(FILE*fp){
 	fprintf(fp, "  syscall\n");
 	fprintf(fp, "  move $v0, $0\n");
 	fprintf(fp, "  jr $ra\n");
+
+	stack_head=(struct stack_node*)(malloc(sizeof(struct stack_node)));
+	stack_head->next=NULL;
+	stack_fp=stack_head;
+	stack_sp=stack_head;
+	stack_head->no=-1;
+
+	pid_head=(struct pid_stack*)(malloc(sizeof(struct pid_stack)));
+	pid_head->next=NULL;
+	pid_cur=pid_head;
+
 }
 void load_reg(Operand op,int reg,FILE*fp){//reg不使用t5,t6,t7,t8
 	switch(op->kind){
 		case OP_VARIABLE:{
 			if(op->ifaddress==OP_ADDRESS){
 				//赋给reg地址;
-				fprintf(fp,"la %s, v%d\n",_reg[reg].name,op->no);
+				fprintf(fp,"  la %s, v%d\n",_reg[reg].name,op->no);
 			}
 			//赋给reg地址里面的值;
 			else{
-				fprintf(fp,"lw %s, v%d\n",_reg[reg].name,op->no);
+				fprintf(fp,"  lw %s, v%d\n",_reg[reg].name,op->no);
 			}
 			break;
 		}
 		case OP_CONSTANT:{
-			fprintf(fp,"li %s, %d\n",_reg[reg].name,op->value);
+			fprintf(fp,"  li %s, %d\n",_reg[reg].name,op->value);
 			break;
 		}
 		case OP_TEMPVAR:{
 			if(op->ifaddress==OP_ADDRESS){
 				//赋给临时寄存器temp var的值也就是目标的地址;
 				//通过临时寄存器得到值;
-				fprintf(fp,"lw %s, t%d\n",_reg[14].name,op->no);
+				fprintf(fp,"  lw %s, t%d\n",_reg[14].name,op->no);
 				//t6;
-				fprintf(fp,"lw %s, 0(%s)\n",_reg[reg].name,_reg[14].name);
+				fprintf(fp,"  lw %s, 0(%s)\n",_reg[reg].name,_reg[14].name);
 			}else{
 				//赋给寄存器temp_var里面的值;
-				fprintf(fp,"lw %s, t%d\n",_reg[reg].name,op->no);
+				fprintf(fp,"  lw %s, t%d\n",_reg[reg].name,op->no);
 			}
 			break;
 		}
 		case OP_FUNCTION:{
 			//赋给reg FUNCTION的地址;
-			fprintf(fp,"la %s, %s\n",_reg[reg].name,op->funcname);
+			fprintf(fp,"  la %s, %s\n",_reg[reg].name,op->funcname);
 			break;
 		}
 		case OP_LABEL:{
-			fprintf(fp,"la %s, label%d\n",_reg[reg].name,op->no);
+			fprintf(fp,"  la %s, label%d\n",_reg[reg].name,op->no);
 			break;
 		}
 		
@@ -161,19 +271,19 @@ void save_reg(Operand op,int reg,FILE*fp){
 				assert(0);
 			}
 			else{
-				fprintf(fp,"sw %s, v%d\n",_reg[reg].name,op->no);
+				fprintf(fp,"  sw %s, v%d\n",_reg[reg].name,op->no);
 			}
 			break;
 		}
 		case OP_TEMPVAR:{
 			if(op->ifaddress==OP_ADDRESS){
-				fprintf(fp,"lw %s, t%d\n",_reg[14].name,op->no);
+				fprintf(fp,"  lw %s, t%d\n",_reg[14].name,op->no);
 				//t6存储要存的目标地址;
-				fprintf(fp,"sw %s, 0(%s)\n",_reg[reg].name,_reg[14].name);
+				fprintf(fp,"  sw %s, 0(%s)\n",_reg[reg].name,_reg[14].name);
 				//往目标地址存;
 
 			}else{
-				fprintf(fp,"sw %s, t%d\n",_reg[reg].name,op->no);
+				fprintf(fp,"  sw %s, t%d\n",_reg[reg].name,op->no);
 			}
 			break;
 		}
@@ -182,13 +292,130 @@ void save_reg(Operand op,int reg,FILE*fp){
 			assert(0);
 	}
 }
+void print_relop(char*relop,FILE*fp){
+	if(strcmp(relop,"==")==0){
+		fprintf(fp,"beq ");
+	}else if(strcmp(relop,"!=")==0){
+		fprintf(fp,"bne ");
+	}else if(strcmp(relop,">")==0){
+		fprintf(fp,"bgt ");
+	}else if(strcmp(relop,"<")==0){
+		fprintf(fp,"blt ");
+	}else if(strcmp(relop,">=")==0){
+		fprintf(fp,"bge ");
+	}else if(strcmp(relop,"<=")==0){
+		fprintf(fp,"ble ");
+	}
 
+
+
+}
 
 void trans_one_code(FILE *fp,struct Intercodes *cur){
 	int kind=cur->code.kind;
 	switch(cur->code.kind){
 		case IN_FUNCTION:{
 			//To be done;
+			//处理返回地址;
+			//https://blog.csdn.net/do2jiang/article/details/5404566
+			fun_name=cur->code.u.one.op0->funcname;
+			fprintf(fp, "\n%s:\n",fun_name);
+			//对main特判;
+			if(strcmp(fun_name,"main")==0){
+				func_state=0;
+				fun_name=NULL;
+				struct Intercodes*temp=cur;
+				int cnt=0;
+				int offset=8;//返回地址(n-4)(sp);fp(n-8)(sp)
+				while(temp!=inter_head){
+					switch(temp->code.kind){
+						case IN_DEC:{
+							Operand tempop1=temp->code.u.two.left;
+							int find_result=find_op(tempop1);
+							if(find_result==0){
+								offset+=temp->code.u.two.right->value;
+								push_op(tempop1,offset);
+								
+							}
+							break;
+						}
+						case IN_ARG:{
+							Operand tempop1=temp->code.u.one.op0;
+							int find_result=find_op(tempop1);
+							if(find_result==0){
+								offset+=4;
+								push_op(tempop1,offset);
+								
+							}
+							break;
+						}
+						case IN_ADD:
+						case IN_SUB:
+						case IN_MUL:
+						case IN_DIV:{
+							printf("hererere\n");
+							Operand tempop1=temp->code.u.three.op1;
+							int find_result=find_op(tempop1);
+							if(find_result==0){
+								offset+=4;
+								push_op(tempop1,offset);
+								
+							}
+							Operand tempop2=temp->code.u.three.op2;
+							find_result=find_op(tempop2);
+							if(find_result==0){
+								offset+=4;
+								push_op(tempop2,offset);
+								
+							}
+							Operand tempop3=temp->code.u.three.result;
+							find_result=find_op(tempop3);
+							if(find_result==0){
+								offset+=4;
+								push_op(tempop3,offset);
+								
+							}
+							break;
+						}
+						case IN_READ:{
+							Operand tempop1=temp->code.u.one.op0;
+							int find_result=find_op(tempop1);
+							if(find_result==0){
+								offset+=4;
+								push_op(tempop1,offset);
+								
+							}
+							break;
+						}
+						case IN_ASSIGN:{
+							Operand tempop1=temp->code.u.two.left;
+							int find_result=find_op(tempop1);
+							if(find_result==0){
+								offset+=4;
+								push_op(tempop1,offset);	
+							}
+							Operand tempop2=temp->code.u.two.left;
+							find_result=find_op(tempop2);
+							if(find_result==0){
+								offset+=4;
+								push_op(tempop1,offset);	
+							}
+
+						}
+					}
+					temp=temp->next;
+				}
+				printf("offset:%d\n",offset);
+				//To be done  包括 ra fp存储 fp 更替;
+				
+				show_stack();
+			}else{
+				func_state=1;
+
+				;
+			}
+			
+
 
 			break;
 		}
@@ -197,15 +424,26 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			break;
 		}
 		case IN_RETURN:{
-			//To be done;
+			if(cur->code.u.one.op0->kind==OP_CONSTANT){
+				//printf("ererer\n\n");
+				int value=cur->code.u.one.op0->value;
+				fprintf(fp,"  move $v0, $%d\n",value);
+			}else{
+				int return_reg=8;//t0
+				load_reg(cur->code.u.one.op0,return_reg,fp);
+				fprintf(fp,"  move $v0, %s\n",_reg[return_reg].name);
+			}
+			fprintf(fp, "  jr $ra\n");
+
 			break;
 		}
 		case IN_LABEL:{
-			//To be done;
+			fprintf(fp,"label%d:\n",cur->code.u.one.op0->no);
 			break;
 		}
 		case IN_GOTO:{
 			//To be done;
+			fprintf(fp,"  j label%d\n",cur->code.u.one.op0->no);
 			break;
 		}
 		case IN_WRITE:{
@@ -224,6 +462,12 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		}
 		case IN_ASSIGN:{
 			//To be done:
+			int left_reg=8;
+			int right_reg=9;
+			load_reg(cur->code.u.two.left,left_reg,fp);
+			load_reg(cur->code.u.two.right,right_reg,fp);
+			fprintf(fp,"  move %s, %s\n",_reg[left_reg].name,_reg[right_reg].name);
+			save_reg(cur->code.u.two.left,left_reg,fp);
 			break;
 		}
 		case IN_DEC:{
@@ -243,7 +487,7 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		//	load_reg(cur->code.u.three.result,result_reg,fp);
 			load_reg(cur->code.u.three.op1,left_reg,fp);
 			load_reg(cur->code.u.three.op2,right_reg,fp);
-			fprintf(fp,"add %s, %s, %s\n",_reg[result_reg].name,_reg[left_reg].name,_reg[right_reg].name);
+			fprintf(fp,"  add %s, %s, %s\n",_reg[result_reg].name,_reg[left_reg].name,_reg[right_reg].name);
 			save_reg(cur->code.u.three.result,result_reg,fp);
 			break;
 		}
@@ -254,7 +498,7 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			int right_reg=10;//t2;
 			load_reg(cur->code.u.three.op1,left_reg,fp);
 			load_reg(cur->code.u.three.op2,right_reg,fp);
-			fprintf(fp,"sub %s, %s, %s\n",_reg[result_reg].name,_reg[left_reg].name,_reg[right_reg].name);
+			fprintf(fp,"  sub %s, %s, %s\n",_reg[result_reg].name,_reg[left_reg].name,_reg[right_reg].name);
 			save_reg(cur->code.u.three.result,result_reg,fp);
 			break;
 		}
@@ -265,7 +509,7 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			int right_reg=10;//t2;
 			load_reg(cur->code.u.three.op1,left_reg,fp);
 			load_reg(cur->code.u.three.op2,right_reg,fp);
-			fprintf(fp,"mul %s, %s, %s\n",_reg[result_reg].name,_reg[left_reg].name,_reg[right_reg].name);
+			fprintf(fp,"  mul %s, %s, %s\n",_reg[result_reg].name,_reg[left_reg].name,_reg[right_reg].name);
 			save_reg(cur->code.u.three.result,result_reg,fp);
 			break;
 		}
@@ -276,13 +520,21 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			int right_reg=10;//t2;
 			load_reg(cur->code.u.three.op1,left_reg,fp);
 			load_reg(cur->code.u.three.op2,right_reg,fp);
-			fprintf(fp,"div %s, %s\n",_reg[left_reg].name,_reg[right_reg].name);
-			fprintf(fp,"mflo %s\n",_reg[result_reg]);
+			fprintf(fp,"  div %s, %s\n",_reg[left_reg].name,_reg[right_reg].name);
+			fprintf(fp,"  mflo %s\n",_reg[result_reg].name);
 			save_reg(cur->code.u.three.result,result_reg,fp);
 			break;
 		}
 		case IN_IFGOTO:{
-
+			int op1_reg=8;
+			int op2_reg=9;
+			
+			load_reg(cur->code.u.four.op1,op1_reg,fp);
+			load_reg(cur->code.u.four.op2,op2_reg,fp);
+			fprintf(fp,"  ");
+			print_relop(cur->code.u.four.relop,fp);
+			//beq sdsdsd
+			fprintf(fp,"%s, %s, label%d\n",_reg[op1_reg].name,_reg[op2_reg].name,cur->code.u.four.op3->no); 
 			break;
 		}
 	}
