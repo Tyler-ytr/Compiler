@@ -3,6 +3,7 @@
 #include "common.h"
 #include "semantic.h"
 #include "imediate.h"
+#include "simulater.h"
 extern FILE*yyin;
 //#define YYDEBUG 1
 

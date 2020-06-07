@@ -633,7 +633,7 @@ int intermediate_generate(struct Node*cur,FILE*fp)
 	Program_g(cur);
 if(IM_DEBUG)	show_global_table();
 if(IM_DEBUG)	show_struct_table();
-	fprintintercode(fp); //lab4不需要打印intercode辣
+if(SI_DEBUG2)	fprintintercode(fp); //lab4不需要打印intercode辣
 
 }
 int Program_g(struct Node* cur){

@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #define _DEBUG_ 1
-#define SI_DEBUG 1
-#define SI_DEBUG2 1
+#define SI_DEBUG 0
+#define SI_DEBUG2 0
 #if _DEBUG_
 #define PR(...) printf(__VA_ARGS__)
 #else
