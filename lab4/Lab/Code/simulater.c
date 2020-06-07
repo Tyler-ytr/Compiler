@@ -16,6 +16,7 @@ struct stack_node*stack_head;
 struct pid_stack*pid_head;
 struct pid_stack*pid_cur;
 
+
 //朴素 从内存取出到t0,t1,t2(8,9,10)然后计算然后放回去;其余寄存器作为中间变量使用;
 // t4(12) 存放地址;
 void init_reg(){
@@ -74,26 +75,28 @@ void init_data(FILE *fp){
 	fprintf(fp, "_prompt: .asciiz \"Enter an integer:\"\n_ret: .asciiz \"\\n\"\n.globl main\n");
 	//对数组,结构体进行申请内存;并且记录相应的变量;
 
-	struct Intercodes *temp=inter_head->next;
-	while(temp!=inter_head){
-		if(temp->code.kind==IN_DEC){
-			printop(temp->code.u.two.left,fp);
-			fprintf(fp,": .word ");
-			fprintf(fp,"%d",temp->code.u.two.right->value);
-			fprintf(fp,"\n");
-		}
-		temp=temp->next;
-		;
-	}
-	//开辟var_cnt,temp_cnt;
-	//int temp=dec_cnt+1;
-	for(int i=dec_cnt+1;i<var_cnt;i++){
-		fprintf(fp,"v%d: .word 4\n",i);
-	}
-		for(int i=0;i<temp_cnt;i++){
-		fprintf(fp,"t%d: .word 4\n",i);
-	}
-	printf("var_cnt:%d, temp_cnt:%d dec_cnt:%d\n",var_cnt,temp_cnt,dec_cnt);
+
+	//以下不需要 记得修改;
+	// struct Intercodes *temp=inter_head->next;
+	// while(temp!=inter_head){
+	// 	if(temp->code.kind==IN_DEC){
+	// 		printop(temp->code.u.two.left,fp);
+	// 		fprintf(fp,": .word ");
+	// 		fprintf(fp,"%d",temp->code.u.two.right->value);
+	// 		fprintf(fp,"\n");
+	// 	}
+	// 	temp=temp->next;
+	// 	;
+	// }
+	// //开辟var_cnt,temp_cnt;
+	// //int temp=dec_cnt+1;
+	// for(int i=dec_cnt+1;i<var_cnt;i++){
+	// 	fprintf(fp,"v%d: .word 4\n",i);
+	// }
+	// 	for(int i=0;i<temp_cnt;i++){
+	// 	fprintf(fp,"t%d: .word 4\n",i);
+	// }
+	//printf("var_cnt:%d, temp_cnt:%d dec_cnt:%d\n",var_cnt,temp_cnt,dec_cnt);
 	//[0,var_cnt),[0,temp_cnt)
 }
 int check_var(Operand op){
@@ -162,7 +165,7 @@ void push_op(Operand op,int offset){
 	if(kind==OP_VARIABLE||kind==OP_TEMPVAR){
 		;
 	}else{
-		printf("wrong push kind:%d no:%d\n",kind,op->no);
+		printf("wrong push kind:%d no:%d value:%d\n",kind,op->no,op->value);
 		printf("can only push op of tempvar or variable\n");
 		assert(0);
 	}
@@ -213,9 +216,11 @@ void init_code(FILE*fp){
 	//read
 	fprintf(fp, ".text\n");
 	fprintf(fp, "_func_read:\n");
-	fprintf(fp, "  li $v0, 4\n");
-	fprintf(fp, "  la $a0, _prompt\n");
-	fprintf(fp, "  syscall\n");
+	if(!SI_DEBUG2){
+		fprintf(fp, "  li $v0, 4\n");
+		fprintf(fp, "  la $a0, _prompt\n");
+		fprintf(fp, "  syscall\n");
+	}
 	fprintf(fp, "  li $v0, 5\n");
 	fprintf(fp, "  syscall\n");
 	fprintf(fp, "  jr $ra\n\n");
@@ -257,6 +262,7 @@ int find_op_offset(Operand cur){
 	if(offset==-1){
 		printf("kind:%d no:%d\n",kind,no);
 		printf("bug in find_op_offset\n");
+		show_stack();
 		assert(0);
 	}
 	return offset;
@@ -360,15 +366,22 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 	int kind=cur->code.kind;
 	switch(cur->code.kind){
 		case IN_FUNCTION:{
+			if(SI_DEBUG2){
+				fprintf(fp,"#FUNCTION ");
+				printop(cur->code.u.one.op0,fp);
+				fprintf(fp," : \n");
+			}
+
 			pop_op();//更新缓存stack;
 			//To be done;
 			//处理返回地址;
 			//https://blog.csdn.net/do2jiang/article/details/5404566
 			fun_name=cur->code.u.one.op0->funcname;
-			fprintf(fp, "\n_func_%s:\n",fun_name);
+			
 			int offset=0;
 			//对main特判;
 			if(strcmp(fun_name,"main")==0){
+				fprintf(fp, "\n%s:\n",fun_name);
 				func_state=0;
 				fun_name=NULL;
 				struct Intercodes*temp=cur;
@@ -392,11 +405,12 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 						}
 						case IN_ARG:{
 							Operand tempop1=temp->code.u.one.op0;
-							int find_result=find_op(tempop1);
-							if(find_result==0){
-								offset+=4;
-								push_op(tempop1,offset);
-								
+							if(check_var(tempop1)){
+								int find_result=find_op(tempop1);
+								if(find_result==0){
+									offset+=4;
+									push_op(tempop1,offset);
+								}
 							}
 							break;
 						}
@@ -447,16 +461,20 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 						}
 						case IN_ASSIGN:{
 							Operand tempop1=temp->code.u.two.left;
-							int find_result=find_op(tempop1);
-							if(find_result==0){
-								offset+=4;
-								push_op(tempop1,offset);	
+							if(check_var(tempop1)){
+								int find_result=find_op(tempop1);
+								if(find_result==0){
+									offset+=4;
+									push_op(tempop1,offset);	
+								}
 							}
-							Operand tempop2=temp->code.u.two.left;
-							find_result=find_op(tempop2);
-							if(find_result==0){
-								offset+=4;
-								push_op(tempop1,offset);	
+							Operand tempop2=temp->code.u.two.right;
+							if(check_var(tempop2)){
+								int find_result=find_op(tempop2);
+								if(find_result==0){
+									offset+=4;
+									push_op(tempop2,offset);	
+								}
 							}
 							break;
 						}
@@ -472,7 +490,7 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 					}
 					temp=temp->next;
 				}
-				printf("offset:%d\n",offset);
+			//	printf("offset:%d\n",offset);
 				//To be done  包括 ra fp存储 fp 更替;
 				//开辟sp:
 				fprintf(fp,"  addi $sp, $sp, -%d\n",offset);
@@ -481,14 +499,15 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 				fprintf(fp,"  sw $fp, %d($sp)\n",offset-8);
 				fprintf(fp,"  addi $fp, $sp, %d\n",offset);
 
-				show_stack();
+				if(SI_DEBUG)show_stack();
 			}else{
+				fprintf(fp, "\n_func_%s:\n",fun_name);
 				func_state=1;
 				//先处理PARAM然后处理局部变量;
-				//v0 4*n(sp)
-				//v1
+				//vn4*n(sp)
+				//vn-1
 				//....
-				//vn sp
+				//v0 sp
 			//	push_pid(stack_fp);
 			//	stack_fp=stack_sp;//更新fp;
 
@@ -503,14 +522,14 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 
 					temp=temp->next;
 				}
-				printf("param_cnt:%d\n",param_cnt);
+				//printf("param_cnt:%d\n",param_cnt);
 				temp=cur->next;
-				offset=0-(param_cnt*4);
+				offset=4;
 				while(1){
 					
 					if(temp->code.kind==IN_PARAM){
 						//param_cnt+=1;
-						offset+=4;
+						offset-=4;
 						Operand tempop1=temp->code.u.one.op0;
 						push_op(tempop1,offset);
 					}else{
@@ -519,6 +538,7 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 					
 					temp=temp->next;
 				}
+				offset+=(param_cnt*4)-4;
 				if(offset!=0){
 					printf("offset now:%d\n",offset);
 					assert(0);
@@ -543,11 +563,12 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 						}
 						case IN_ARG:{
 							Operand tempop1=temp->code.u.one.op0;
-							int find_result=find_op(tempop1);
-							if(find_result==0){
-								offset+=4;
-								push_op(tempop1,offset);
-								
+							if(check_var(tempop1)){
+								int find_result=find_op(tempop1);
+								if(find_result==0){
+									offset+=4;
+									push_op(tempop1,offset);
+								}
 							}
 							break;
 						}
@@ -598,13 +619,26 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 						}
 						case IN_ASSIGN:{
 							Operand tempop1=temp->code.u.two.left;
-							int find_result=find_op(tempop1);
-							if(find_result==0){
-								offset+=4;
-								push_op(tempop1,offset);	
+							if(check_var(tempop1)){
+								int find_result=find_op(tempop1);
+								if(find_result==0){
+									offset+=4;
+									push_op(tempop1,offset);	
+								}
 							}
-							Operand tempop2=temp->code.u.two.left;
-							find_result=find_op(tempop2);
+							Operand tempop2=temp->code.u.two.right;
+							if(check_var(tempop2)){
+								int find_result=find_op(tempop2);
+								if(find_result==0){
+									offset+=4;
+									push_op(tempop2,offset);	
+								}
+							}
+							break;
+						}
+						case IN_CALL:{
+							Operand tempop1=temp->code.u.two.left;
+							int find_result=find_op(tempop1);
 							if(find_result==0){
 								offset+=4;
 								push_op(tempop1,offset);	
@@ -615,7 +649,7 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 					}
 					temp=temp->next;
 				}
-				printf("offset2:%d\n",offset);
+			//	printf("offset2:%d\n",offset);
 				//To be done  包括 ra fp存储 fp 更替;
 				//开辟sp:
 				fprintf(fp,"  addi $sp, $sp, -%d\n",offset);
@@ -624,7 +658,7 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 				fprintf(fp,"  sw $fp, %d($sp)\n",offset-8);
 				fprintf(fp,"  addi $fp, $sp, %d\n",offset);
 
-				show_stack();
+				if(SI_DEBUG)show_stack();
 				
 
 				;
@@ -637,17 +671,28 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		case IN_PARAM:{
 			//To be done;
 			//在函数里面处理好;
+			if(SI_DEBUG2){
+				fprintf(fp,"#PARAM ");
+				printop(cur->code.u.one.op0,fp);
+				fprintf(fp,"\n");
+			}
 			break;
 		}
 		case IN_RETURN:{
 			//需要修改!!!
 			//stack 需要出栈;(现在放在FUNCTION开头;)
 			//要返回的值存到v0里面;
-
+			if(SI_DEBUG2){
+				fprintf(fp,"#RETURN ");
+				printop(cur->code.u.one.op0,fp);
+				fprintf(fp,"\n");
+			}
 			if(cur->code.u.one.op0->kind==OP_CONSTANT){
 				//printf("ererer\n\n");
 				int value=cur->code.u.one.op0->value;
-				fprintf(fp,"  move $v0, $%d\n",value);
+				int temp_reg=8;
+				load_reg(cur->code.u.one.op0,temp_reg,fp);
+				fprintf(fp,"  move $v0, %s\n",_reg[temp_reg].name);
 			}else{
 				int return_reg=8;//t0
 				load_reg(cur->code.u.one.op0,return_reg,fp);
@@ -664,17 +709,32 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			break;
 		}
 		case IN_LABEL:{
+			if(SI_DEBUG2){
+				fprintf(fp,"#LABEL label");
+				printop(cur->code.u.one.op0,fp);
+				fprintf(fp," : \n");
+			}
 			fprintf(fp,"label%d:\n",cur->code.u.one.op0->no);
 			break;
 		}
 		case IN_GOTO:{
 			//To be done;
+			if(SI_DEBUG2){
+				fprintf(fp,"#GOTO label");
+				printop(cur->code.u.one.op0,fp);
+				fprintf(fp,"\n");
+			}
 			fprintf(fp,"  j label%d\n",cur->code.u.one.op0->no);
 			break;
 		}
 		case IN_WRITE:{
 			//To be done;
 			//a0里面存;
+			if(SI_DEBUG2){
+				fprintf(fp,"#WRITE ");
+				printop(cur->code.u.one.op0, fp);
+				fprintf(fp,"\n");
+			}
 			int temp_reg=8;
 			int write_reg=4;
 			load_reg(cur->code.u.one.op0,temp_reg,fp);
@@ -685,9 +745,14 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		}
 		case IN_READ:{
 			//To be done;
+			if(SI_DEBUG2){
+				fprintf(fp,"#READ ");
+				printop(cur->code.u.one.op0, fp);
+				fprintf(fp,"\n");
+			}
 			int temp_reg=8;
 			int read_reg=2;
-			fprintf(fp,"  jal _func_write\n");
+			fprintf(fp,"  jal _func_read\n");
 			fprintf(fp,"  move %s, %s\n",_reg[temp_reg].name,_reg[read_reg].name);
 			save_reg(cur->code.u.one.op0,temp_reg,fp);
 			break;
@@ -697,6 +762,11 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			//往栈里面压;
 			//SP增长;
 			//stack_node不需要额外增加;(到PARAM的地方再更新;)
+			if(SI_DEBUG2){
+				fprintf(fp,"#ARG ");
+				printop(cur->code.u.one.op0, fp); 
+				fprintf(fp," \n");
+			}
 			fprintf(fp,"  addi $sp,$sp,-4\n");
 			int arg_reg=16;//s0
 			load_reg(cur->code.u.one.op0,arg_reg,fp);
@@ -707,6 +777,13 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		}
 		case IN_ASSIGN:{
 			//To be done:
+			if(SI_DEBUG2){
+				fprintf(fp,"#");
+				printop(cur->code.u.two.left,fp);
+				fprintf(fp," := ");
+				printop(cur->code.u.two.right,fp);
+				fprintf(fp,"\n");
+			}
 			int left_reg=8;
 			int right_reg=9;
 			load_reg(cur->code.u.two.left,left_reg,fp);
@@ -717,12 +794,28 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		}
 		case IN_DEC:{
 			//Done in init;
+			if(SI_DEBUG2){
+				fprintf(fp,"#DEC ");
+				printop(cur->code.u.two.left,fp);
+				fprintf(fp," %d",cur->code.u.two.right->value);
+				fprintf(fp,"\n");
+			}	
 			break;
 		}
 		case IN_CALL:{
 			//To be done;
-
-			fprintf(fp,"  jal _func_%s\n",cur->code.u.two.right->funcname);
+		if(SI_DEBUG2){
+				fprintf(fp,"#");
+				printop(cur->code.u.two.left, fp);
+				fprintf(fp," := CALL ");
+				printop(cur->code.u.two.right, fp);
+				fprintf(fp,"\n");
+		}
+			if(strcmp(cur->code.u.two.right->funcname,"main")!=0)
+				fprintf(fp,"  jal _func_%s\n",cur->code.u.two.right->funcname);
+			else{
+				fprintf(fp,"  jal %s\n",cur->code.u.two.right->funcname);
+			}
 			//从v0里面取;	存到对应的内存;		
 			int return_reg=2;
 			save_reg(cur->code.u.two.left,return_reg,fp);
@@ -732,6 +825,15 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		}
 		case IN_ADD:{
 			//To be done;
+			if(SI_DEBUG2){
+				fprintf(fp,"#");
+				printop(cur->code.u.three.result,fp);
+				fprintf(fp," := ");
+				printop(cur->code.u.three.op1,fp);
+				fprintf(fp," + ");
+				printop(cur->code.u.three.op2,fp);
+				fprintf(fp,"\n");
+			}
 			int result_reg=8;//t0
 			int left_reg=9;//t1
 			int right_reg=10;//t2;
@@ -745,6 +847,15 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		}
 		case IN_SUB:{
 			//To be done;
+			if(SI_DEBUG2){
+				fprintf(fp,"#");
+				printop(cur->code.u.three.result,fp);
+				fprintf(fp," := ");
+				printop(cur->code.u.three.op1,fp);
+				fprintf(fp," - ");
+				printop(cur->code.u.three.op2,fp);
+				fprintf(fp,"\n");
+			}
 			int result_reg=8;//t0
 			int left_reg=9;//t1
 			int right_reg=10;//t2;
@@ -756,6 +867,15 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		}
 		case IN_MUL:{
 			//To be done;
+			if(SI_DEBUG2){
+				fprintf(fp,"#");
+				printop(cur->code.u.three.result,fp);
+				fprintf(fp," := ");
+				printop(cur->code.u.three.op1,fp);
+				fprintf(fp," * ");
+				printop(cur->code.u.three.op2,fp);
+				fprintf(fp,"\n");
+			}
 			int result_reg=8;//t0
 			int left_reg=9;//t1
 			int right_reg=10;//t2;
@@ -767,6 +887,15 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 		}
 		case IN_DIV:{
 			//To be done;
+			if(SI_DEBUG2){
+				fprintf(fp,"#");
+				printop(cur->code.u.three.result,fp);
+				fprintf(fp," := ");
+				printop(cur->code.u.three.op1,fp);
+				fprintf(fp," / ");
+				printop(cur->code.u.three.op2,fp);
+				fprintf(fp,"\n");
+			}
 			int result_reg=8;//t0
 			int left_reg=9;//t1
 			int right_reg=10;//t2;
@@ -778,6 +907,15 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			break;
 		}
 		case IN_IFGOTO:{
+			if(SI_DEBUG2){
+				fprintf(fp,"#IF ");
+				printop(cur->code.u.four.op1,fp);
+				fprintf(fp," %s ",cur->code.u.four.relop);
+				printop(cur->code.u.four.op2,fp);
+				fprintf(fp," GOTO label");
+				printop(cur->code.u.four.op3, fp);
+				fprintf(fp,"\n");
+			}
 			int op1_reg=8;
 			int op2_reg=9;
 			

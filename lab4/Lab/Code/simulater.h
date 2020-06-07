@@ -1,6 +1,5 @@
 #ifndef SIMULATER_H
 #define SIMULATER_H
-
 #include "common.h"
 #include "imediate.h"
 #include "symbol_table.h"

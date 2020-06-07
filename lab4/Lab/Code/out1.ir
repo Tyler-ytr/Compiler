@@ -1,26 +1,154 @@
-FUNCTION fact : 
-PARAM v0
-IF v0 != #1 GOTO label0
-RETURN v0
-GOTO label1
+FUNCTION array_structure : 
+DEC v0 8040
+t0 := #0 * #804
+t1 := &v0 + t0
+t2 := t1
+*t2 := #2
+t3 := #0 * #804
+t4 := &v0 + t3
+t5 := t4 + #4
+t6 := #0 * #8
+t7 := t5 + t6
+t8 := t7
+*t8 := #1234
+t9 := #0 * #804
+t10 := &v0 + t9
+t11 := t10 + #4
+t12 := #0 * #8
+t13 := t11 + t12
+t14 := t13 + #4
+t15 := #0 * #804
+t16 := &v0 + t15
+t17 := t16 + #4
+t18 := #0 * #8
+t19 := t17 + t18
+t20 := t19
+*t14 := *t20
+t21 := #0 * #804
+t22 := &v0 + t21
+t23 := t22 + #4
+t24 := #0 * #8
+t25 := t23 + t24
+t26 := t25 + #4
+WRITE *t26
+t27 := #0
+RETURN t27
+FUNCTION func_overflow : 
+PARAM v1
+t28 := #0 - #1
+t29 := t28 * #4
+t30 := v1 + t29
+t31 := #1 * #4
+t32 := v1 + t31
+*t30 := *t32
+RETURN #0
+FUNCTION danger_ops : 
+DEC v2 12
+DEC v3 12
+t33 := &v2
+*t33 := #2019
+t34 := &v2 + #8
+*t34 := #2020
+t35 := &v2 + #4
+t36 := #0 - #1
+t37 := t36 * #4
+t38 := t35 + t37
+t39 := #0 - #1
+*t38 := t39
+t40 := &v2 + #4
+t41 := #1 * #4
+t42 := t40 + t41
+t43 := #0 - #2
+*t42 := t43
+t44 := &v2
+WRITE *t44
+t45 := #0
+t46 := &v2 + #8
+WRITE *t46
+t47 := #0
+t48 := &v3
+*t48 := #123
+t49 := &v3 + #8
+*t49 := #456
+t51 := &v3 + #4
+ARG t51 
+t50 := CALL func_overflow
+t52 := &v3
+WRITE *t52
+t53 := #0
+t54 := &v3 + #8
+WRITE *t54
+t55 := #0
+t56 := #0 - #1
+RETURN t56
+FUNCTION keyword_names : 
+DEC v4 3
+v21 := v22
+v20 := v21
+v19 := v20
+v18 := v19
+v17 := v18
+v16 := v17
+v15 := v16
+v14 := v15
+v13 := v14
+v12 := v13
+v11 := v12
+v10 := v11
+v9 := v10
+v8 := v9
+v7 := v8
+v6 := v7
+v5 := v6
+v4 := v5
+RETURN #0
+FUNCTION partial_array_copy : 
+DEC v23 100
+DEC v24 100
+v25 := #0
 LABEL label0 : 
-t2 := v0 - #1
-ARG t2 
-t1 := CALL fact
-t0 := v0 * t1
-RETURN t0
+IF v25 >= #5 GOTO label1
+t57 := #3 * #20
+t58 := &v23 + t57
+t59 := v25 * #4
+t60 := t58 + t59
+t61 := v25 * v25
+*t60 := t61
+t62 := v25 + #1
+v25 := t62
+GOTO label0
 LABEL label1 : 
-FUNCTION main : 
-READ t3
-v1 := t3
-IF v1 <= #1 GOTO label2
-ARG v1 
-t4 := CALL fact
-v2 := t4
-GOTO label3
+t63 := #2 * #20
+t64 := &v24 + t63
+t65 := #3 * #20
+t66 := &v23 + t65
+t67 := t64
+t68 := t66
+t69 := &v23 + #100
 LABEL label2 : 
-v2 := #1
+IF t68 >= t69 GOTO label3
+*t67 := *t68
+t67 := t67 + #4
+t68 := t68 + #4
+GOTO label2
 LABEL label3 : 
-WRITE v2
-t5 := #0
+v25 := #0
+LABEL label4 : 
+IF v25 >= #5 GOTO label5
+t70 := #2 * #20
+t71 := &v24 + t70
+t72 := v25 * #4
+t73 := t71 + t72
+WRITE *t73
+t74 := #0
+t75 := v25 + #1
+v25 := t75
+GOTO label4
+LABEL label5 : 
+RETURN #0
+FUNCTION main : 
+t76 := CALL array_structure
+t77 := CALL danger_ops
+t78 := CALL keyword_names
+t79 := CALL partial_array_copy
 RETURN #0
