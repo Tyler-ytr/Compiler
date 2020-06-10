@@ -7,12 +7,7 @@ struct Register{
 	int state;//表示状态 0为空闲1为使用
 	char *name;//表示名字
 };
-// struct Opdict{
-// 	//变量和寄存器的字典;
-// 	int reg;//寄存器编号;
-// 	Operand op;//OP指针
-// 	struct Opdict *next;//链表结构;
-// };
+
 struct stack_node{
 	int offset;
 	// enum{

@@ -73,31 +73,6 @@ void init_data(FILE *fp){
 	//数据段初始化;
 	fprintf(fp,".data\n");
 	fprintf(fp, "_prompt: .asciiz \"Enter an integer:\"\n_ret: .asciiz \"\\n\"\n.globl main\n");
-	//对数组,结构体进行申请内存;并且记录相应的变量;
-
-
-	//以下不需要 记得修改;
-	// struct Intercodes *temp=inter_head->next;
-	// while(temp!=inter_head){
-	// 	if(temp->code.kind==IN_DEC){
-	// 		printop(temp->code.u.two.left,fp);
-	// 		fprintf(fp,": .word ");
-	// 		fprintf(fp,"%d",temp->code.u.two.right->value);
-	// 		fprintf(fp,"\n");
-	// 	}
-	// 	temp=temp->next;
-	// 	;
-	// }
-	// //开辟var_cnt,temp_cnt;
-	// //int temp=dec_cnt+1;
-	// for(int i=dec_cnt+1;i<var_cnt;i++){
-	// 	fprintf(fp,"v%d: .word 4\n",i);
-	// }
-	// 	for(int i=0;i<temp_cnt;i++){
-	// 	fprintf(fp,"t%d: .word 4\n",i);
-	// }
-	//printf("var_cnt:%d, temp_cnt:%d dec_cnt:%d\n",var_cnt,temp_cnt,dec_cnt);
-	//[0,var_cnt),[0,temp_cnt)
 }
 int check_var(Operand op){
 	return (op->kind==OP_VARIABLE||op->kind==OP_TEMPVAR);
@@ -718,7 +693,6 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			break;
 		}
 		case IN_GOTO:{
-			//To be done;
 			if(SI_DEBUG2){
 				fprintf(fp,"#GOTO label");
 				printop(cur->code.u.one.op0,fp);
@@ -728,7 +702,6 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			break;
 		}
 		case IN_WRITE:{
-			//To be done;
 			//a0里面存;
 			if(SI_DEBUG2){
 				fprintf(fp,"#WRITE ");
@@ -744,7 +717,6 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 
 		}
 		case IN_READ:{
-			//To be done;
 			if(SI_DEBUG2){
 				fprintf(fp,"#READ ");
 				printop(cur->code.u.one.op0, fp);
@@ -758,7 +730,6 @@ void trans_one_code(FILE *fp,struct Intercodes *cur){
 			break;
 		}
 		case IN_ARG:{
-			//To be done;
 			//往栈里面压;
 			//SP增长;
 			//stack_node不需要额外增加;(到PARAM的地方再更新;)
